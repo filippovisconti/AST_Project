@@ -1,7 +1,7 @@
 class Ansible_Task:
-    '''
+    """
     Ansible_Task class
-    '''
+    """
 
     def __init__(self, task_name, task_module, task_args):
         self.task_name: str = task_name
@@ -19,7 +19,7 @@ class Ansible_Task:
                         ('192' in value or '127' in value or 'SELINUX' in value
                          or 'Listen' in value))):
                 part += f"    {key}: {value}\n"
-            elif (key == "regexp" or key == "line"):
+            elif key == "regexp" or key == "line":
                 part += f"    {key}: '{value}'\n"
             else:
                 part += f"    {key}: '{value}'\n"

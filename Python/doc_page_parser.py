@@ -4,7 +4,7 @@ import pandas as pd
 import requests, pprint, yaml
 
 
-def parse_ansible_doc(url: str, enable_prints=False) -> None:
+def parse_ansible_doc(url: str, enable_prints=False) -> dict:
     response = requests.get(url)
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -17,7 +17,7 @@ def parse_ansible_doc(url: str, enable_prints=False) -> None:
     attributes_dictionary = dict(
         zip(attributes_df.iloc[:, 0], attributes_df.iloc[:, 1]))
 
-    if (enable_prints):
+    if enable_prints:
         print(attributes_df)
         pprint.pprint(attributes_dictionary)
 
@@ -26,14 +26,14 @@ def parse_ansible_doc(url: str, enable_prints=False) -> None:
 
 def parse_examples_yaml(url: str = None,
                         filename: str = None,
-                        enable_prints=False) -> None:
-    if (url == None and filename == None):
+                        enable_prints: bool = False) -> dict:
+    if url is None and filename is None:
         raise Exception("Either url or filename must be provided")
 
-    if (url != None and filename != None):
+    if url is not None and filename is not None:
         raise Exception("Only one of url or filename must be provided")
 
-    if (url != None):
+    if url is not None:
         response = requests.get(url)
 
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -41,11 +41,11 @@ def parse_examples_yaml(url: str = None,
 
         yaml_dict = yaml.safe_load(pre.text)
 
-    if (filename != None):
+    if filename is not None:
         with open(filename, 'r') as stream:
             yaml_dict = yaml.safe_load(stream)
 
-    if (enable_prints):
+    if enable_prints:
         pprint.pprint(yaml_dict)
 
     return yaml_dict
