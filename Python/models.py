@@ -14,9 +14,14 @@ class Ansible_Task:
 
         for key, value in self.task_args.items():
             if (type(value) != str or key == "path" or key == "owner"
-                    or key == "group" or key == "state" or key == "validate"):
+                    or key == "group" or key == "state" or key == "validate"
+                    or (key == "line" and
+                        ('192' in value or '127' in value or 'SELINUX' in value
+                         or 'Listen' in value))):
                 part += f"    {key}: {value}\n"
+            elif (key == "regexp" or key == "line"):
+                part += f"    {key}: '{value}'\n"
             else:
                 part += f"    {key}: '{value}'\n"
 
-        return part
+        return part + "\n"

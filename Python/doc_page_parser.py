@@ -55,18 +55,10 @@ def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
     attributes_dictionary: dict = parse_ansible_doc(url)
-    module_examples: dict = parse_examples_yaml(filename=filename,
-                                                enable_prints=True)
+    module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
                         attributes_dictionary)
-    print(task)
-    with open('test.yml', 'w') as file:
-        for example in module_examples:
-            task = Ansible_Task(example['name'], 'ansible.builtin.lineinfile',
-                                example['ansible.builtin.lineinfile'])
-            file.write(str(task))
-            print(task)
 
 
 if __name__ == "__main__":
