@@ -3,6 +3,6 @@ FROM alpine:latest
 RUN apk update && \
     apk add --no-cache ansible
 
-RUN mkdir /root/ansible
-
-VOLUME ["./ansible:/root/ansible"]
+RUN mkdir -p /root/ansible
+RUN mkdir -p /root/.ssh/authorized_keys
+# RUN ANSIBLE_CONFIG=/root/ansible/ansible.cfg

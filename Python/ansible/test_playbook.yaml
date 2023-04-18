@@ -5,5 +5,5 @@
     - name: Install ping package
       become: true
       apt:
-        name: ping
+        name: iputils-ping
         state: present
