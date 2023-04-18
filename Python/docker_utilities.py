@@ -43,6 +43,13 @@ def build_ansible_image():
     client.images.build(path='.',
                         dockerfile='Dockerfile',
                         tag='my-ansible-runner')
+    logging.info("Built ansible-runner image")
+    if not client.images.list(name=image_name):
+        logging.info("Pulling debian image...")
+        client.images.pull(image_name, platform=platform)
+        logging.info("Pulled debian image")
+    else:
+        logging.info("Debian image already exists")
 
 
 def create_cnc_macine():
@@ -92,6 +99,7 @@ def create_cnc_macine():
 def create_containers():
     # Create containers
     for i in range(container_count):
+
         container_name = f'container_{i+2}'
         container = client.containers.create(
             image_name,
