@@ -1,0 +1,5 @@
+run
+
+sudo ln -sf "$HOME/.docker/run/docker.sock" /var/run/docker.sock
+
+on macOS to fix docker connection error

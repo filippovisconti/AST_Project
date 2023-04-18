@@ -1,0 +1,9 @@
+---
+- name: Install ping package
+  hosts: containers
+  tasks:
+    - name: Install ping package
+      become: true
+      apt:
+        name: ping
+        state: present
