@@ -2,6 +2,11 @@ from bs4 import BeautifulSoup
 from models import Ansible_Task
 import pandas as pd
 import requests, pprint, yaml
+import re
+
+
+# This function takes a URL for an (Ansible documentation) page as input
+# It returns a dictionary where the keys are the attribute names and the values are the descriptions of those attributes.
 
 
 def parse_ansible_doc(url: str, enable_prints=False) -> dict:
@@ -11,17 +16,34 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
     attributes_table = soup.find('table')
 
     attributes_df: pd.DataFrame = pd.read_html(str(attributes_table))[0]
-
-    attributes_df['Parameter'] = attributes_df['Parameter'].str.split().str[0]
-
-    attributes_dictionary = dict(
-        zip(attributes_df.iloc[:, 0], attributes_df.iloc[:, 1]))
+    attributes_dictionary = dict(zip(attributes_df.iloc[:, 0], attributes_df.iloc[:, 1]))
 
     if enable_prints:
         print(attributes_df)
         pprint.pprint(attributes_dictionary)
 
     return attributes_dictionary
+
+
+# This function takes a description string and returns a list of plausible values for that attribute
+def extract_attribute_values(description: str) -> list:
+    # First, check if description contains words like "possible values", "one of", or "can be"
+    possible_value_indicators = ["possible values", "one of", "can be"]
+    for indicator in possible_value_indicators:
+        if indicator in description.lower():
+            # Extract the text after the indicator and split it into a list of possible values
+            possible_values = re.findall(f"{indicator}(.*?)[.,]", description, re.IGNORECASE)
+            if possible_values:
+                possible_values = [v.strip() for v in possible_values[0].split("or")]
+                return possible_values
+
+    # If no possible value indicators are found, look for specific keywords in the description
+    if "boolean" in description.lower():
+        return ["True", "False"]
+    if "string" in description.lower():
+        return ["string"]
+    # If no keywords are found, return None
+    return None
 
 
 def parse_examples_yaml(url: str = None,
@@ -55,6 +77,11 @@ def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
     attributes_dictionary: dict = parse_ansible_doc(url)
+    for attributes, comments in attributes_dictionary.items():
+        plausible_values = extract_attribute_values(attributes)
+        attribute_name = attributes.split()[0]
+        print(f"{attribute_name}: {plausible_values}")
+
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
