@@ -27,16 +27,6 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
 
 # This function takes a description string and returns a list of plausible values for that attribute
 def extract_attribute_values(description: str) -> list:
-    # First, check if description contains words like "possible values", "one of", or "can be"
-    possible_value_indicators = ["possible values", "one of", "can be"]
-    for indicator in possible_value_indicators:
-        if indicator in description.lower():
-            # Extract the text after the indicator and split it into a list of possible values
-            possible_values = re.findall(f"{indicator}(.*?)[.,]", description, re.IGNORECASE)
-            if possible_values:
-                possible_values = [v.strip() for v in possible_values[0].split("or")]
-                return possible_values
-
     # If no possible value indicators are found, look for specific keywords in the description
     if "boolean" in description.lower():
         return ["True", "False"]
