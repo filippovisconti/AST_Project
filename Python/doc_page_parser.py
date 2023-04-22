@@ -4,8 +4,8 @@ import pandas as pd
 import requests, pprint, yaml
 
 
-# This function takes a URL for an (Ansible documentation) page as input
-# It returns a dictionary where the keys are the attribute names and the values are the descriptions of those attributes.
+# This function takes a URL for an (Ansible documentation) page as input. It returns a dictionary where the keys are
+# the attribute names and the values are the descriptions of those attributes.
 def parse_ansible_doc(url: str, enable_prints=False) -> dict:
     response = requests.get(url)
 
@@ -78,13 +78,14 @@ def main() -> None:
     filename = "lineinfile_examples.yaml"
     attributes_dictionary: dict = parse_ansible_doc(url)
 
-    plausible_values_dict = {}
+    plausible_values_dict = {}  # dict with attribute name as key and their plausible value as values
     for attribute, comment in attributes_dictionary.items():
         plausible_values = extract_attribute_values(attribute, comment)
         attribute_name = attribute.split()[0]
         plausible_values_dict[attribute_name] = plausible_values
-        #print(f"{attribute_name}: {plausible_values}")
-    print(plausible_values_dict)
+        # print(f"{attribute_name}: {plausible_values}")
+    # print(plausible_values_dict)
+
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
