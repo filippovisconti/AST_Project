@@ -26,12 +26,25 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
 
 
 # This function takes a description string and returns a list of plausible values for that attribute
-def extract_attribute_values(description: str) -> list:
-    # If no possible value indicators are found, look for specific keywords in the description
+def extract_attribute_values(description: str, comment: str) -> list:
+    if "Choices:" in comment:
+        choices_string = comment.split("Choices: ")[1]  # Extract the choices substring
+        choices_list = choices_string.split(' ')  # Split the choices substring into a list of individual values
+
+        choices_list = [choice.strip('"') for choice in choices_list]  # Remove any surrounding quotes from the values
+        choices_list = [elem for elem in choices_list if elem not in ['←', '(default)']]
+        return choices_list
+
     if "boolean" in description.lower():
         return ["True", "False"]
     if "string" in description.lower():
         return ["string"]
+    if "any" in description.lower():
+        return ["any"]
+    if "path" in description.lower():
+        return ["path"]
+    if "int" in description.lower():
+        return ["int"]
     # If no keywords are found, return None
     return None
 
@@ -67,10 +80,11 @@ def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
     attributes_dictionary: dict = parse_ansible_doc(url)
-    for attributes, comments in attributes_dictionary.items():
-        plausible_values = extract_attribute_values(attributes)
-        attribute_name = attributes.split()[0]
+    for attribute, comment in attributes_dictionary.items():
+        plausible_values = extract_attribute_values(attribute, comment)
+        attribute_name = attribute.split()[0]
         print(f"{attribute_name}: {plausible_values}")
+
 
     module_examples: dict = parse_examples_yaml(filename=filename)
 
