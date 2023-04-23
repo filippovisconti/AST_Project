@@ -19,7 +19,15 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
         print(attributes_df)
         pprint.pprint(attributes_dictionary)
 
-    return attributes_dictionary
+    plausible_values_dict = {}  # dict with attribute name as key and their plausible value as values
+    for attribute, comment in attributes_dictionary.items():
+        plausible_values = extract_attribute_values(attribute, comment)
+        attribute_name = attribute.split()[0]
+        plausible_values_dict[attribute_name] = plausible_values
+        #print(f"{attribute_name}: {plausible_values}")
+    # print(plausible_values_dict)
+
+    return plausible_values_dict
 
 
 # This function takes a description string and returns a list of plausible values for that attribute
@@ -31,17 +39,17 @@ def extract_attribute_values(description: str, comment: str) -> list:
         choices_list = [choice.strip('"') for choice in choices_list]  # Remove any surrounding quotes from the values
         choices_list = [elem for elem in choices_list if elem not in ['←', '(default)']]
         return choices_list
-
-    if "boolean" in description.lower():
-        return ["boolean"]
-    if "string" in description.lower():
-        return ["string"]
-    if "any" in description.lower():
-        return ["any"]
-    if "path" in description.lower():
-        return ["path"]
-    if "int" in description.lower():
-        return ["int"]
+    #get type of the description
+    # if "boolean" in description.lower():
+    #     return ["boolean"]
+    # if "string" in description.lower():
+    #     return ["string"]
+    # if "any" in description.lower():
+    #     return ["any"]
+    # if "path" in description.lower():
+    #     return ["path"]
+    # if "int" in description.lower():
+    #     return ["int"]
     # If no keywords are found, return None
     return None
 
@@ -76,20 +84,12 @@ def parse_examples_yaml(url: str = None,
 def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
-    attributes_dictionary: dict = parse_ansible_doc(url)
-
-    plausible_values_dict = {}  # dict with attribute name as key and their plausible value as values
-    for attribute, comment in attributes_dictionary.items():
-        plausible_values = extract_attribute_values(attribute, comment)
-        attribute_name = attribute.split()[0]
-        plausible_values_dict[attribute_name] = plausible_values
-        # print(f"{attribute_name}: {plausible_values}")
-    # print(plausible_values_dict)
+    attributes_values_dictionary: dict = parse_ansible_doc(url)
 
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
-                        attributes_dictionary)
+                        attributes_values_dictionary)
 
 
 if __name__ == "__main__":
