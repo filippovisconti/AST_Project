@@ -24,7 +24,7 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
         plausible_values = extract_attribute_values(attribute, comment)
         attribute_name = attribute.split()[0]
         plausible_values_dict[attribute_name] = plausible_values
-        #print(f"{attribute_name}: {plausible_values}")
+        # print(f"{attribute_name}: {plausible_values}")
     # print(plausible_values_dict)
 
     return plausible_values_dict
@@ -39,7 +39,7 @@ def extract_attribute_values(description: str, comment: str) -> list:
         choices_list = [choice.strip('"') for choice in choices_list]  # Remove any surrounding quotes from the values
         choices_list = [elem for elem in choices_list if elem not in ['←', '(default)']]
         return choices_list
-    #get type of the description
+    # get type of the description
     # if "boolean" in description.lower():
     #     return ["boolean"]
     # if "string" in description.lower():
