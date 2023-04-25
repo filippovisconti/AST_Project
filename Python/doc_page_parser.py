@@ -19,39 +19,47 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
         print(attributes_df)
         pprint.pprint(attributes_dictionary)
 
-    plausible_values_dict = {}  # dict with attribute name as key and their plausible value as values
+    return attributes_dictionary
+
+
+# This function takes a dict and returns a dict of plausible values for the attributes
+def extract_attribute_values(attributes_dictionary: dict) -> dict:
+    plausible_values_dict = {}
     for attribute, comment in attributes_dictionary.items():
-        plausible_values = extract_attribute_values(attribute, comment)
         attribute_name = attribute.split()[0]
-        plausible_values_dict[attribute_name] = plausible_values
-        # print(f"{attribute_name}: {plausible_values}")
-    # print(plausible_values_dict)
+        if "Choices:" in comment:
+            choices = comment.split("Choices: ")[1]  # Extract the choices substring
+            choices_list = choices.split(' ')  # Split the choices substring into a list of individual values
+            choices_list = [choice.strip('"') for choice in
+                            choices_list]  # Remove any surrounding quotes from the values
+            plausible_values = [elem for elem in choices_list if elem not in ['←', '(default)']]
+
+            plausible_values_dict[attribute_name] = plausible_values
+        else:
+            plausible_values_dict[attribute_name] = None
 
     return plausible_values_dict
 
+# This function takes a dict and returns a dict of default values for the attributes
+def get_default_value(attributes_dictionary: dict) -> dict:
+    default_values_dict = {}
+    for attribute, comment in attributes_dictionary.items():
+        attribute_name = attribute.split()[0]
+        if "Choices:" in comment:
+            if "Choices:" in comment:
+                choices = comment.split("Choices: ")[1]
+                default_separator = ' ← (default)'
+                default_pos = choices.find(default_separator)
+                if default_pos != -1:
+                    default_value = choices.split(default_separator)[0]
+                    default_value = default_value.split(' ')[-1]
+            default_values_dict[attribute_name] = default_value
+        else:
+            default_values_dict[attribute_name] = None
 
-# This function takes a description string and returns a list of plausible values for that attribute
-def extract_attribute_values(description: str, comment: str) -> list:
-    if "Choices:" in comment:
-        choices_string = comment.split("Choices: ")[1]  # Extract the choices substring
-        choices_list = choices_string.split(' ')  # Split the choices substring into a list of individual values
+    return default_values_dict
 
-        choices_list = [choice.strip('"') for choice in choices_list]  # Remove any surrounding quotes from the values
-        choices_list = [elem for elem in choices_list if elem not in ['←', '(default)']]
-        return choices_list
-    # get type of the description
-    # if "boolean" in description.lower():
-    #     return ["boolean"]
-    # if "string" in description.lower():
-    #     return ["string"]
-    # if "any" in description.lower():
-    #     return ["any"]
-    # if "path" in description.lower():
-    #     return ["path"]
-    # if "int" in description.lower():
-    #     return ["int"]
-    # If no keywords are found, return None
-    return None
+
 
 
 def parse_examples_yaml(url: str = None,
@@ -85,6 +93,8 @@ def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
     attributes_values_dictionary: dict = parse_ansible_doc(url)
+    plausible_values_dictionary: dict = extract_attribute_values(attributes_values_dictionary)
+    default_values_dict: dict = get_default_value(attributes_values_dictionary)
 
     module_examples: dict = parse_examples_yaml(filename=filename)
 
