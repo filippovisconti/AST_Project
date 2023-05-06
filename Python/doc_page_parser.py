@@ -1,7 +1,10 @@
-from bs4 import BeautifulSoup
-from models import Ansible_Task
 import pandas as pd
-import requests, pprint, yaml
+import pprint
+import requests
+import yaml
+from bs4 import BeautifulSoup
+
+from models import Ansible_Task
 
 
 # This function takes a URL for an (Ansible documentation) page as input. It returns a dictionary where the keys are
@@ -40,6 +43,7 @@ def extract_attribute_values(attributes_dictionary: dict) -> dict:
 
     return plausible_values_dict
 
+
 # This function takes a dict and returns a dict of default values for the attributes
 def get_default_value(attributes_dictionary: dict) -> dict:
     default_values_dict = {}
@@ -58,8 +62,6 @@ def get_default_value(attributes_dictionary: dict) -> dict:
             default_values_dict[attribute_name] = None
 
     return default_values_dict
-
-
 
 
 def parse_examples_yaml(url: str = None,

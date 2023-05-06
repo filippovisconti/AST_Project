@@ -1,7 +1,8 @@
+import logging
 import os
-import pprint
-from click import pause
-import docker, logging
+import platform
+
+import docker
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,8 +17,13 @@ network_name = 'ansible_network'
 
 # Define container settings
 image_name = 'debian'
+image_name_cnc = 'alpine'
 container_count = 3
-platform = 'linux/arm64'
+if platform.machine() == 'arm64':
+    platform = 'linux/arm64'
+else:
+    platform = 'linux/amd64'
+
 start_command = 'tail -f /dev/null'
 cwd = os.getcwd()
 
@@ -40,23 +46,38 @@ def create_network():
 
 def build_ansible_image():
     # Build image
+    if not client.images.list(name=image_name_cnc):
+        logging.info(f"Pulling {image_name_cnc} image...")
+        client.images.pull(image_name_cnc, platform=platform)
+        logging.info(f"Pulled {image_name_cnc}image")
+    else:
+        logging.info(f"{image_name_cnc} image already exists")
+
     client.images.build(path='.',
-                        dockerfile='Dockerfile',
+                        dockerfile='Dockerfile-ansible-runner',
                         tag='my-ansible-runner')
     logging.info("Built ansible-runner image")
+
+
+def build_debian_image():
+    # Build image
     if not client.images.list(name=image_name):
-        logging.info("Pulling debian image...")
+        logging.info(f"Pulling {image_name} image...")
         client.images.pull(image_name, platform=platform)
-        logging.info("Pulled debian image")
+        logging.info(f"Pulled {image_name} image")
     else:
-        logging.info("Debian image already exists")
+        logging.info(f"{image_name} image already exists")
+    client.images.build(path='.',
+                        dockerfile='Dockerfile-debian',
+                        tag='my-debian')
+    logging.info(f"Built {image_name} image")
 
 
-def create_cnc_macine():
+def create_cnc_machine() -> None:
     # Create containers
 
     container_name = f'cnc_machine'
-    container = client.containers.create('my-ansible-runner',
+    container = client.containers.create(image='my-ansible-runner',
                                          name=container_name,
                                          network=network_name,
                                          platform=platform,
@@ -83,11 +104,13 @@ def create_cnc_macine():
     container.exec_run(command)
 
     logging.info(
-        f'Started container {container_name} with IP address {container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]}'
+        f'Started container {container_name} ' +
+        f'with IP address {container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]}'
     )
 
     # res = container.exec_run(
-    #     'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/test_playbook.yaml'  # > /root/ansible/output.txt'
+    #     'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/test_playbook.yaml'
+    # > /root/ansible/output.txt'
     # )
     # print(res)
 
@@ -96,13 +119,13 @@ def create_cnc_macine():
 # ansible-playbook -i inventory.ini test_playbook.yaml
 # chmod 600 ansible_ed25519
 # Create function to create containers
-def create_containers():
+def create_containers() -> list[docker.models.containers.Container]:
     # Create containers
+    containers = []
     for i in range(container_count):
-
-        container_name = f'container_{i+2}'
+        container_name = f'container_{i + 2}'
         container = client.containers.create(
-            image_name,
+            image=f'my-debian',
             name=container_name,
             network=network_name,
             platform=platform,
@@ -125,18 +148,28 @@ def create_containers():
         container.start()
         container.reload()
         logging.info(
-            f'Started container {container_name} with IP address {container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]}'
+            f'Started container {container_name} ' +
+            f'with IP address {container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]}'
         )
-        command = 'apt update'
-        res = container.exec_run(command)
-        command = 'apt install net-tools openssh-server python3 sudo -y'
-        res = container.exec_run(command)
-        command = 'service ssh start'
-        res = container.exec_run(command)
-        command = 'passwd -d root'
-        res = container.exec_run(command)
+        # command: str = 'apt update'
+        # container.exec_run(command)
 
-        logging.info(f'Executed command on container {container_name}')
+        # command = 'apt install net-tools openssh-server python3 sudo -y'
+        # container.exec_run(command)
+
+        command = 'service ssh start'
+        container.exec_run(command)
+
+        logging.info(f'Executed commands on container {container_name}')
+        containers.append(container)
+
+    return containers
+
+
+def reset_containers(containers: list[docker.models.containers.Container]):
+    for cont in containers:
+        cont.restart()
+        logging.info(f'Restarted container {cont.name}')
 
 
 def delete_containers():
@@ -152,28 +185,7 @@ def delete_containers():
 
 
 def main():
-    # Call create_containers function
-    try:
-        create_network()
-        build_ansible_image()
-        create_containers()
-        create_cnc_macine()
-
-        # Wait for user input
-        # pause()
-        res = client.containers.get('cnc_machine').exec_run(
-            'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/test_playbook.yaml'  # > /root/ansible/output.txt'
-        )
-        if res.exit_code == 0:
-            logging.info("Ansible playbook executed successfully")
-        else:
-            logging.error(f"Ansible playbook failed - code {res.exit_code}")
-            logging.error(res.output.decode('utf-8'))
-
-    except:
-        logging.exception("Exception occurred. Cleaning up...")
-        # TODO: Remove containers and network
-    delete_containers()
+    pass
 
 
 if __name__ == '__main__':
