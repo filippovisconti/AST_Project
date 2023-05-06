@@ -167,8 +167,10 @@ def create_containers() -> list[docker.models.containers.Container]:
 
 
 def reset_containers(containers: list[docker.models.containers.Container]):
+    logging.info(f'Restarting containers...')
     for cont in containers:
         cont.restart()
+        cont.exec_run('service ssh start')
         logging.info(f'Restarted container {cont.name}')
 
 
@@ -182,6 +184,22 @@ def delete_containers():
     # Remove network
     client.networks.get(network_name).remove()
     logging.info("Removed network")
+
+
+def run_ansible_playbook(playbook_path: str) -> int:
+    logging.info("Running Ansible playbook...")
+    res = client.containers.get('cnc_machine').exec_run(
+        f'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
+    )
+
+    if res.exit_code == 0:
+        logging.info("Ansible playbook executed successfully")
+        logging.info(res.output.decode('utf-8'))
+    else:
+        logging.error(f"Ansible playbook failed - code {res.exit_code}")
+        logging.error(res.output.decode('utf-8'))
+
+    return res.exit_code
 
 
 def main():
