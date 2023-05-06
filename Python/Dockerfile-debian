@@ -1,8 +1,9 @@
-FROM alpine:latest
+FROM debian:latest
 
-RUN apk update && \
-    apk add --no-cache ansible
+RUN apt update
+RUN apt install net-tools openssh-server python3 sudo -y
 
-RUN mkdir -p /root/ansible
-RUN mkdir -p /root/.ssh/authorized_keys
+#RUN service ssh start
+
+
 # RUN ANSIBLE_CONFIG=/root/ansible/ansible.cfg
