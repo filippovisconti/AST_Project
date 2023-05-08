@@ -95,7 +95,8 @@ def get_valuetypes(attributes_dictionary: dict) -> dict:
 
 
 # TODO get more module specification
-# TODO create dictionary of dictionaries
+
+# create dictionary of dictionaries
 def combine_attribute_dicts(attributes_dictionary, plausible_values_dictionary, default_values_dict,
                             attributes_valuetypes_dict):
     attribute_dict = {}
@@ -143,7 +144,11 @@ def main() -> None:
     attributes_values_dictionary: dict = parse_ansible_doc(url)
     plausible_values_dictionary: dict = extract_attribute_values(attributes_values_dictionary)
     default_values_dict: dict = get_default_value(attributes_values_dictionary)
-    attributes_valuetypes_dict: dict = get_valuetypes(attributes_values_dictionary)
+    attributes_value_types_dict: dict = get_valuetypes(attributes_values_dictionary)
+
+    attribute_specification_dict: dict = combine_attribute_dicts(attributes_value_types_dict,
+                                                                 plausible_values_dictionary, default_values_dict,
+                                                                 attributes_value_types_dict)
 
     module_examples: dict = parse_examples_yaml(filename=filename)
 
