@@ -93,9 +93,11 @@ def get_valuetypes(attributes_dictionary: dict) -> dict:
             valuetypes_dict[attribute_name] = None
     return valuetypes_dict
 
+
 # TODO get more module specification
 # TODO create dictionary of dictionaries
-def combine_attribute_dicts(attributes_dictionary, plausible_values_dictionary, default_values_dict, attributes_valuetypes_dict):
+def combine_attribute_dicts(attributes_dictionary, plausible_values_dictionary, default_values_dict,
+                            attributes_valuetypes_dict):
     attribute_dict = {}
     for attribute, comment in attributes_dictionary.items():
         attribute_name = attribute.split()[0]
@@ -143,12 +145,10 @@ def main() -> None:
     default_values_dict: dict = get_default_value(attributes_values_dictionary)
     attributes_valuetypes_dict: dict = get_valuetypes(attributes_values_dictionary)
 
-
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
                         attributes_values_dictionary)
-
 
 
 if __name__ == "__main__":
