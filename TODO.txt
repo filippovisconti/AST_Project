@@ -1,0 +1,10 @@
+TODO
+
+
+[ ] Create dictionary to hold module specification -> use class and id types from html
+[ ] Decide generic specification format
+	- Check if parameters are mutually exclusive
+[ ] Create generator for every file type (paths, boolean) and design mutation strategies - mutate system state and configuration -> keep it simple
+	- Get setup code from integration tests of modules
+	- Try to extract automatically
+[ ] Clean up code after each task
