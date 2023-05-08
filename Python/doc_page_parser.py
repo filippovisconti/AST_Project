@@ -7,12 +7,19 @@ from bs4 import BeautifulSoup
 from models import Ansible_Task
 
 
+# This function takes a URL page as input and returns the html of the page
+def get_html_of_url(url: str) -> str:
+    response = requests.get(url)
+    html = response.text
+    return html
+
+
 # This function takes a URL for an (Ansible documentation) page as input. It returns a dictionary where the keys are
 # the attribute names and the values are the descriptions of those attributes.
 def parse_ansible_doc(url: str, enable_prints=False) -> dict:
-    response = requests.get(url)
+    html = get_html_of_url(url)
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(html, 'html.parser')
     attributes_table = soup.find('table')
 
     attributes_df: pd.DataFrame = pd.read_html(str(attributes_table))[0]
@@ -21,7 +28,6 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
     if enable_prints:
         print(attributes_df)
         pprint.pprint(attributes_dictionary)
-
     return attributes_dictionary
 
 
@@ -40,7 +46,6 @@ def extract_attribute_values(attributes_dictionary: dict) -> dict:
             plausible_values_dict[attribute_name] = plausible_values
         else:
             plausible_values_dict[attribute_name] = None
-
     return plausible_values_dict
 
 
@@ -62,6 +67,45 @@ def get_default_value(attributes_dictionary: dict) -> dict:
             default_values_dict[attribute_name] = None
 
     return default_values_dict
+
+
+# This function takes a dict and returns a dict of value types for the attributes
+def get_valuetypes(attributes_dictionary: dict) -> dict:
+    valuetypes_dict = {}
+    for attribute, comment in attributes_dictionary.items():
+        attribute_name = attribute.split()[0]
+
+        if "string" in attribute:
+            valuetypes_dict[attribute_name] = "string"
+        elif "boolean" in attribute:
+            valuetypes_dict[attribute_name] = "boolean"
+        elif "int" in attribute:
+            valuetypes_dict[attribute_name] = "int"
+        elif "float" in attribute:
+            valuetypes_dict[attribute_name] = "float"
+        elif "double" in attribute:
+            valuetypes_dict[attribute_name] = "double"
+        elif "path" in attribute:
+            valuetypes_dict[attribute_name] = "path"
+        elif "any" in attribute:
+            valuetypes_dict[attribute_name] = "any"
+        else:
+            valuetypes_dict[attribute_name] = None
+    return valuetypes_dict
+
+# TODO get more module specification
+# TODO create dictionary of dictionaries
+def combine_attribute_dicts(attributes_dictionary, plausible_values_dictionary, default_values_dict, attributes_valuetypes_dict):
+    attribute_dict = {}
+    for attribute, comment in attributes_dictionary.items():
+        attribute_name = attribute.split()[0]
+        specification_dict = {
+            "value type": attributes_valuetypes_dict.get(attribute_name),
+            "plausible values": plausible_values_dictionary.get(attribute_name),
+            "default value": default_values_dict.get(attribute_name),
+        }
+        attribute_dict[attribute_name] = specification_dict
+    return attribute_dict
 
 
 def parse_examples_yaml(url: str = None,
@@ -97,11 +141,14 @@ def main() -> None:
     attributes_values_dictionary: dict = parse_ansible_doc(url)
     plausible_values_dictionary: dict = extract_attribute_values(attributes_values_dictionary)
     default_values_dict: dict = get_default_value(attributes_values_dictionary)
+    attributes_valuetypes_dict: dict = get_valuetypes(attributes_values_dictionary)
+
 
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
                         attributes_values_dictionary)
+
 
 
 if __name__ == "__main__":
