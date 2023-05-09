@@ -73,6 +73,7 @@ def get_default_value(attributes_dictionary: dict) -> dict:
 
     return default_values_dict
 
+
 # This function takes a dict and returns a dict of value types for the attributes
 def get_value_types(attributes_dictionary: dict) -> dict:
     valuetypes_dict = {}
@@ -113,6 +114,7 @@ def get_attribute_version(attributes_dictionary: dict) -> dict:
         attribute_version_dict[attribute_name] = attribute_version
     return attribute_version_dict
 
+
 # TODO get more module specification from html by using class and id
 def extract_data(soup):
     data = {}
@@ -120,19 +122,23 @@ def extract_data(soup):
         data['name'] = soup.select_one('.ansible-option-title strong').text
     except AttributeError:
         data['name'] = None
+
     try:
         data['aliases'] = soup.select_one('.ansible-option-aliases').text.split(': ')[1]
     except AttributeError:
         data['aliases'] = None
+
     try:
         data['type'] = soup.select_one('.ansible-option-type').text
     except AttributeError:
         data['type'] = None
+
     try:
         data['version_added'] = soup.select_one('.ansible-option-versionadded').text.split()[2] + " " + \
                                 soup.select_one('.ansible-option-versionadded').text.split()[3]
     except AttributeError:
         data['version_added'] = None
+
     try:
         data['description'] = soup.select_one('.ansible-option-cell p').text
     except:
@@ -140,7 +146,8 @@ def extract_data(soup):
 
     return data
 
-#
+
+# TODO safe it in a dict an add it correctly to the specifiation dict
 def extract_attribute_specification(html):
     soup = BeautifulSoup(html, 'html.parser')
     soup = soup.find('table')
@@ -148,9 +155,9 @@ def extract_attribute_specification(html):
 
     data = {}
     for attribute_class in classes:
-        #print(attribute_class)
+        # print(attribute_class)
         result = extract_data(attribute_class)
-        #print(result)
+        # print(result)
     return data
 
 
@@ -169,6 +176,7 @@ def get_attribute_specifications(attributes_dictionary):
             "version": attributes_version_dict.get(attribute_name),
             "plausible values": plausible_values_dictionary.get(attribute_name),
             "default value": default_values_dict.get(attribute_name),
+            "comment": comment
         }
         attribute_specifications_dict[attribute_name] = specification_dict
         # print(f"{attribute_name}: {specification_dict}")
