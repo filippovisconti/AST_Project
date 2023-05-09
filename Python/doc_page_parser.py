@@ -11,6 +11,8 @@ from models import Ansible_Task
 def get_html_of_url(url: str) -> str:
     response = requests.get(url)
     html = response.text
+    # Create a new file named "example.html" in write mode
+
     return html
 
 
@@ -21,6 +23,9 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
 
     soup = BeautifulSoup(html, 'html.parser')
     attributes_table = soup.find('table')
+    with open("ansible_lininfile.html", "w") as file:
+        # Write the HTML content to the file
+        file.write(attributes_table.prettify())
 
     attributes_df: pd.DataFrame = pd.read_html(str(attributes_table))[0]
     attributes_dictionary = dict(zip(attributes_df.iloc[:, 0], attributes_df.iloc[:, 1]))
@@ -32,7 +37,7 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
 
 
 # This function takes a dict and returns a dict of plausible values for the attributes
-def extract_attribute_values(attributes_dictionary: dict) -> dict:
+def get_plausible_values(attributes_dictionary: dict) -> dict:
     plausible_values_dict = {}
     for parameter, comment in attributes_dictionary.items():
         attribute_name = parameter.split()[0]
@@ -69,8 +74,9 @@ def get_default_value(attributes_dictionary: dict) -> dict:
     return default_values_dict
 
 
+# TODO get more module specification
 # This function takes a dict and returns a dict of value types for the attributes
-def get_valuetypes(attributes_dictionary: dict) -> dict:
+def get_value_types(attributes_dictionary: dict) -> dict:
     valuetypes_dict = {}
     for attribute, comment in attributes_dictionary.items():
         attribute_name = attribute.split()[0]
@@ -93,27 +99,39 @@ def get_valuetypes(attributes_dictionary: dict) -> dict:
     return valuetypes_dict
 
 
-# TODO get more module specification
-
-# create dictionary of dictionaries
-def combine_attribute_dicts(attributes_dictionary, plausible_values_dictionary, default_values_dict,
-                            attributes_valuetypes_dict):
-    attribute_dict = {}
+# This function takes a dict and returns a dict of value types for the attributes
+def get_value_types(attributes_dictionary: dict) -> dict:
+    valuetypes_dict = {}
     for attribute, comment in attributes_dictionary.items():
         attribute_name = attribute.split()[0]
-        specification_dict = {
-            "value type": attributes_valuetypes_dict.get(attribute_name),
-            "plausible values": plausible_values_dictionary.get(attribute_name),
-            "default value": default_values_dict.get(attribute_name),
-        }
-        attribute_dict[attribute_name] = specification_dict
-    return attribute_dict
+        if "string" in attribute:
+            valuetypes_dict[attribute_name] = "string"
+        elif "boolean" in attribute:
+            valuetypes_dict[attribute_name] = "boolean"
+        elif "int" in attribute:
+            valuetypes_dict[attribute_name] = "int"
+        elif "float" in attribute:
+            valuetypes_dict[attribute_name] = "float"
+        elif "double" in attribute:
+            valuetypes_dict[attribute_name] = "double"
+        elif "path" in attribute:
+            valuetypes_dict[attribute_name] = "path"
+        elif "any" in attribute:
+            valuetypes_dict[attribute_name] = "any"
+        else:
+            valuetypes_dict[attribute_name] = None
+    return valuetypes_dict
 
+
+
+
+
+# create dictionary of dictionaries
 def get_attribute_specifications(attributes_dictionary):
     attribute_specifications_dict = {}
-    plausible_values_dictionary: dict = extract_attribute_values(attributes_dictionary)
+    plausible_values_dictionary: dict = get_plausible_values(attributes_dictionary)
     default_values_dict: dict = get_default_value(attributes_dictionary)
-    attributes_value_types_dict: dict = get_valuetypes(attributes_dictionary)
+    attributes_value_types_dict: dict = get_value_types(attributes_dictionary)
 
     for attribute, comment in attributes_dictionary.items():
         attribute_name = attribute.split()[0]
@@ -125,6 +143,7 @@ def get_attribute_specifications(attributes_dictionary):
         attribute_specifications_dict[attribute_name] = specification_dict
     print(attribute_specifications_dict)
     return attribute_specifications_dict
+
 
 def parse_examples_yaml(url: str = None,
                         filename: str = None,
@@ -157,13 +176,8 @@ def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
     attributes_values_dictionary: dict = parse_ansible_doc(url)
-    plausible_values_dictionary: dict = extract_attribute_values(attributes_values_dictionary)
-    default_values_dict: dict = get_default_value(attributes_values_dictionary)
-    #attributes_value_types_dict: dict = get_valuetypes(attributes_values_dictionary)
-
-    #attribute_specification_dict: dict = combine_attribute_dicts(attributes_value_types_dict,plausible_values_dictionary, default_values_dict,attributes_value_types_dict)
-
     attributes_value_types_dict: dict = get_attribute_specifications(attributes_values_dictionary)
+
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
