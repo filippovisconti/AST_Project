@@ -34,8 +34,8 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
 # This function takes a dict and returns a dict of plausible values for the attributes
 def extract_attribute_values(attributes_dictionary: dict) -> dict:
     plausible_values_dict = {}
-    for attribute, comment in attributes_dictionary.items():
-        attribute_name = attribute.split()[0]
+    for parameter, comment in attributes_dictionary.items():
+        attribute_name = parameter.split()[0]
         if "Choices:" in comment:
             choices = comment.split("Choices: ")[1]  # Extract the choices substring
             choices_list = choices.split(' ')  # Split the choices substring into a list of individual values
@@ -52,8 +52,8 @@ def extract_attribute_values(attributes_dictionary: dict) -> dict:
 # This function takes a dict and returns a dict of default values for the attributes
 def get_default_value(attributes_dictionary: dict) -> dict:
     default_values_dict = {}
-    for attribute, comment in attributes_dictionary.items():
-        attribute_name = attribute.split()[0]
+    for parameter, comment in attributes_dictionary.items():
+        attribute_name = parameter.split()[0]
         if "Choices:" in comment:
             if "Choices:" in comment:
                 choices = comment.split("Choices: ")[1]
@@ -74,7 +74,6 @@ def get_valuetypes(attributes_dictionary: dict) -> dict:
     valuetypes_dict = {}
     for attribute, comment in attributes_dictionary.items():
         attribute_name = attribute.split()[0]
-
         if "string" in attribute:
             valuetypes_dict[attribute_name] = "string"
         elif "boolean" in attribute:
@@ -110,6 +109,22 @@ def combine_attribute_dicts(attributes_dictionary, plausible_values_dictionary, 
         attribute_dict[attribute_name] = specification_dict
     return attribute_dict
 
+def get_attribute_specifications(attributes_dictionary):
+    attribute_specifications_dict = {}
+    plausible_values_dictionary: dict = extract_attribute_values(attributes_dictionary)
+    default_values_dict: dict = get_default_value(attributes_dictionary)
+    attributes_value_types_dict: dict = get_valuetypes(attributes_dictionary)
+
+    for attribute, comment in attributes_dictionary.items():
+        attribute_name = attribute.split()[0]
+        specification_dict = {
+            "value type": attributes_value_types_dict.get(attribute_name),
+            "plausible values": plausible_values_dictionary.get(attribute_name),
+            "default value": default_values_dict.get(attribute_name),
+        }
+        attribute_specifications_dict[attribute_name] = specification_dict
+    print(attribute_specifications_dict)
+    return attribute_specifications_dict
 
 def parse_examples_yaml(url: str = None,
                         filename: str = None,
@@ -144,12 +159,11 @@ def main() -> None:
     attributes_values_dictionary: dict = parse_ansible_doc(url)
     plausible_values_dictionary: dict = extract_attribute_values(attributes_values_dictionary)
     default_values_dict: dict = get_default_value(attributes_values_dictionary)
-    attributes_value_types_dict: dict = get_valuetypes(attributes_values_dictionary)
+    #attributes_value_types_dict: dict = get_valuetypes(attributes_values_dictionary)
 
-    attribute_specification_dict: dict = combine_attribute_dicts(attributes_value_types_dict,
-                                                                 plausible_values_dictionary, default_values_dict,
-                                                                 attributes_value_types_dict)
+    #attribute_specification_dict: dict = combine_attribute_dicts(attributes_value_types_dict,plausible_values_dictionary, default_values_dict,attributes_value_types_dict)
 
+    attributes_value_types_dict: dict = get_attribute_specifications(attributes_values_dictionary)
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
