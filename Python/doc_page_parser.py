@@ -118,6 +118,9 @@ def get_attribute_version(attributes_dictionary: dict) -> dict:
 # TODO get more module specification from html by using class and id
 def extract_data(soup):
     data = {}
+    div_class = soup.find_all('div')
+
+
     try:
         data['name'] = soup.select_one('.ansible-option-title strong').text
     except AttributeError:
@@ -139,13 +142,12 @@ def extract_data(soup):
     except AttributeError:
         data['version_added'] = None
 
+    div_class = soup.find_all('div')
     try:
-        # TODO bug fix, not getting the text descripton, getting name instead
-        # data['description'] = soup.select_one('.ansible-option-cell p').text.strip()
-        data['description'] = soup.select_one('.ansible-option-cell p:nth-of-type(1)').text
+        data['description'] = div_class[-1].select_one('p').text
     except:
         data['description'] = None
-
+    # TODO add pre
     # paragraphs = soup.find_all('p')
     # print(paragraphs)
     # data_p = {}
