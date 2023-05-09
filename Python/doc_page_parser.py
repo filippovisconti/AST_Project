@@ -140,10 +140,11 @@ def extract_data(soup):
     except AttributeError:
         data['version_added'] = None
 
-    # TODO get the whole description
+    # TODO get description without slash
     div_class = soup.find_all('div')
     try:
-        data['description'] = div_class[-1].select_one('p').text
+        data['description'] = div_class[-1].text.replace('\n', ' ')
+        data['description'] = data['description'].replace('\\', ' ')
     except:
         data['description'] = None
 
