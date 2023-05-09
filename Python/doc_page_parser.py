@@ -119,7 +119,8 @@ def extract_data(soup):
     div_class = soup.find_all('div')
 
     try:
-        data['name'] = soup.select_one('.ansible-option-title strong').text
+        name = soup.select_one('.ansible-option-title strong').text
+        data['name'] = name
     except AttributeError:
         data['name'] = None
 
@@ -139,18 +140,28 @@ def extract_data(soup):
     except AttributeError:
         data['version_added'] = None
 
+    # TODO get the whole description
     div_class = soup.find_all('div')
     try:
         data['description'] = div_class[-1].select_one('p').text
     except:
         data['description'] = None
-    # TODO add pre
 
+    try:
+        pre_tags = soup.find_all('code', class_='docutils literal notranslate')
+        all_tags = []
+        for tag in pre_tags:
+           all_tags.append(tag.text.strip())
+        data['tag'] = all_tags
+    except:
+        data['tag'] = None
 
     try:
         data['choices'] = [li.text.strip() for li in soup.select('.ansible-option-cell ul.simple li')]
     except:
         data['choices'] = None
+
+    #TODO default value not correct, is blank
     try:
         data['default value'] = soup.select_one(
         '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark').previous_sibling.strip() \
@@ -162,18 +173,21 @@ def extract_data(soup):
     return data
 
 
-# TODO save it in a dict an add it correctly to the specifiation dict
-def extract_attribute_specification(html):
+def get_attribute_specification_html(html):
     soup = BeautifulSoup(html, 'html.parser')
     soup = soup.find('table')
     cell = soup.find_all('tr')
 
-    data = {}
+    attribute_specifications = {}
+    ignore_header = True
+
     for attribute_class in cell:
-        # print(attribute_class)
-        result = extract_data(attribute_class)
-        print(result)
-    return data
+        if ignore_header is False:
+            specifications = extract_data(attribute_class)
+            attribute_specifications[specifications['name']] = specifications
+        else:
+            ignore_header = False
+    return attribute_specifications
 
 
 # create dictionary of dictionaries
@@ -230,12 +244,18 @@ def main() -> None:
     filename = "lineinfile_examples.yaml"
     attributes_values_dictionary: dict = parse_ansible_doc(url)
     attributes_specification_dict: dict = get_attribute_specifications(attributes_values_dictionary)
-    attributes_specification_html_dict: dict = extract_attribute_specification(get_html_of_url(url))
+    attributes_specification_html_dict: dict = get_attribute_specification_html(get_html_of_url(url))
+
+
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
                         attributes_values_dictionary)
+    for attribute_name, specification in attributes_specification_html_dict.items():
+        print(f"{attribute_name}: {specification}")
 
+    with open('attribute_specification.yaml', 'w') as file:
+        yaml.dump(attributes_specification_html_dict, file, default_flow_style=False)
 
 if __name__ == "__main__":
     main()
