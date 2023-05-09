@@ -140,24 +140,32 @@ def extract_data(soup):
         data['version_added'] = None
 
     try:
-        data['description'] = soup.select_one('.ansible-option-cell p').text
+        # TODO bug fix, not getting the text descripton, getting name instead
+        # data['description'] = soup.select_one('.ansible-option-cell p').text.strip()
+        data['description'] = soup.select_one('.ansible-option-cell p:nth-of-type(1)').text
     except:
         data['description'] = None
 
+    # paragraphs = soup.find_all('p')
+    # print(paragraphs)
+    # data_p = {}
+    # for p in paragraphs:
+    #   code = p.find('code')
+    # data['paragraph'] = data_p
     return data
 
 
-# TODO safe it in a dict an add it correctly to the specifiation dict
+# TODO save it in a dict an add it correctly to the specifiation dict
 def extract_attribute_specification(html):
     soup = BeautifulSoup(html, 'html.parser')
     soup = soup.find('table')
-    classes = soup.find_all('tr')
+    cell = soup.find_all('tr')
 
     data = {}
-    for attribute_class in classes:
+    for attribute_class in cell:
         # print(attribute_class)
         result = extract_data(attribute_class)
-        # print(result)
+        print(result)
     return data
 
 
