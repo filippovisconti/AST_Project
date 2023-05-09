@@ -11,8 +11,6 @@ from models import Ansible_Task
 def get_html_of_url(url: str) -> str:
     response = requests.get(url)
     html = response.text
-    # extract_data(html)
-    extract_attribute_specification(html)
     return html
 
 
@@ -120,7 +118,6 @@ def extract_data(soup):
     data = {}
     div_class = soup.find_all('div')
 
-
     try:
         data['name'] = soup.select_one('.ansible-option-title strong').text
     except AttributeError:
@@ -148,12 +145,20 @@ def extract_data(soup):
     except:
         data['description'] = None
     # TODO add pre
-    # paragraphs = soup.find_all('p')
-    # print(paragraphs)
-    # data_p = {}
-    # for p in paragraphs:
-    #   code = p.find('code')
-    # data['paragraph'] = data_p
+
+
+    try:
+        data['choices'] = [li.text.strip() for li in soup.select('.ansible-option-cell ul.simple li')]
+    except:
+        data['choices'] = None
+    try:
+        data['default value'] = soup.select_one(
+        '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark').previous_sibling.strip() \
+            if soup.select_one(
+        '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark') else None
+    except:
+        data['default value'] = None
+
     return data
 
 
@@ -225,7 +230,7 @@ def main() -> None:
     filename = "lineinfile_examples.yaml"
     attributes_values_dictionary: dict = parse_ansible_doc(url)
     attributes_specification_dict: dict = get_attribute_specifications(attributes_values_dictionary)
-
+    attributes_specification_html_dict: dict = extract_attribute_specification(get_html_of_url(url))
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
