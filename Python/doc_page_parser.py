@@ -11,8 +11,8 @@ from models import Ansible_Task
 def get_html_of_url(url: str) -> str:
     response = requests.get(url)
     html = response.text
-    # Create a new file named "example.html" in write mode
-
+    # extract_data(html)
+    extract_attribute_specification(html)
     return html
 
 
@@ -73,8 +73,6 @@ def get_default_value(attributes_dictionary: dict) -> dict:
 
     return default_values_dict
 
-
-# TODO get more module specification
 # This function takes a dict and returns a dict of value types for the attributes
 def get_value_types(attributes_dictionary: dict) -> dict:
     valuetypes_dict = {}
@@ -99,31 +97,61 @@ def get_value_types(attributes_dictionary: dict) -> dict:
     return valuetypes_dict
 
 
-# This function takes a dict and returns a dict of value types for the attributes
-def get_value_types(attributes_dictionary: dict) -> dict:
-    valuetypes_dict = {}
+# This function takes a dict and returns a dict of attribute version
+def get_attribute_version(attributes_dictionary: dict) -> dict:
+    attribute_version_dict = {}
     for attribute, comment in attributes_dictionary.items():
         attribute_name = attribute.split()[0]
-        if "string" in attribute:
-            valuetypes_dict[attribute_name] = "string"
-        elif "boolean" in attribute:
-            valuetypes_dict[attribute_name] = "boolean"
-        elif "int" in attribute:
-            valuetypes_dict[attribute_name] = "int"
-        elif "float" in attribute:
-            valuetypes_dict[attribute_name] = "float"
-        elif "double" in attribute:
-            valuetypes_dict[attribute_name] = "double"
-        elif "path" in attribute:
-            valuetypes_dict[attribute_name] = "path"
-        elif "any" in attribute:
-            valuetypes_dict[attribute_name] = "any"
-        else:
-            valuetypes_dict[attribute_name] = None
-    return valuetypes_dict
+        attribute_version = None
+        if "added in" in attribute:
+            parts = attribute.split(' ')
 
+            for i in range(len(attribute_name) - 3):
+                if parts[i] == 'added' and parts[i + 1] == 'in':
+                    attribute_version = f"{parts[i + 2]} {parts[i + 3]}"
+                    break
+        attribute_version_dict[attribute_name] = attribute_version
+    return attribute_version_dict
 
+# TODO get more module specification from html by using class and id
+def extract_data(soup):
+    data = {}
+    try:
+        data['name'] = soup.select_one('.ansible-option-title strong').text
+    except AttributeError:
+        data['name'] = None
+    try:
+        data['aliases'] = soup.select_one('.ansible-option-aliases').text.split(': ')[1]
+    except AttributeError:
+        data['aliases'] = None
+    try:
+        data['type'] = soup.select_one('.ansible-option-type').text
+    except AttributeError:
+        data['type'] = None
+    try:
+        data['version_added'] = soup.select_one('.ansible-option-versionadded').text.split()[2] + " " + \
+                                soup.select_one('.ansible-option-versionadded').text.split()[3]
+    except AttributeError:
+        data['version_added'] = None
+    try:
+        data['description'] = soup.select_one('.ansible-option-cell p').text
+    except:
+        data['description'] = None
 
+    return data
+
+#
+def extract_attribute_specification(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    soup = soup.find('table')
+    classes = soup.find_all('tr')
+
+    data = {}
+    for attribute_class in classes:
+        #print(attribute_class)
+        result = extract_data(attribute_class)
+        #print(result)
+    return data
 
 
 # create dictionary of dictionaries
@@ -132,16 +160,18 @@ def get_attribute_specifications(attributes_dictionary):
     plausible_values_dictionary: dict = get_plausible_values(attributes_dictionary)
     default_values_dict: dict = get_default_value(attributes_dictionary)
     attributes_value_types_dict: dict = get_value_types(attributes_dictionary)
+    attributes_version_dict: dict = get_attribute_version(attributes_dictionary)
 
     for attribute, comment in attributes_dictionary.items():
         attribute_name = attribute.split()[0]
         specification_dict = {
             "value type": attributes_value_types_dict.get(attribute_name),
+            "version": attributes_version_dict.get(attribute_name),
             "plausible values": plausible_values_dictionary.get(attribute_name),
             "default value": default_values_dict.get(attribute_name),
         }
         attribute_specifications_dict[attribute_name] = specification_dict
-    print(attribute_specifications_dict)
+        # print(f"{attribute_name}: {specification_dict}")
     return attribute_specifications_dict
 
 
@@ -176,7 +206,7 @@ def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
     attributes_values_dictionary: dict = parse_ansible_doc(url)
-    attributes_value_types_dict: dict = get_attribute_specifications(attributes_values_dictionary)
+    attributes_specification_dict: dict = get_attribute_specifications(attributes_values_dictionary)
 
     module_examples: dict = parse_examples_yaml(filename=filename)
 
