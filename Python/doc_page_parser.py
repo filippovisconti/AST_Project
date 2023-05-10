@@ -113,7 +113,6 @@ def get_attribute_version(attributes_dictionary: dict) -> dict:
     return attribute_version_dict
 
 
-# TODO get more module specification from html by using class and id
 def extract_data(soup):
     data = {}
     div_class = soup.find_all('div')
@@ -130,15 +129,23 @@ def extract_data(soup):
         data['aliases'] = None
 
     try:
+        if (soup.select_one('.ansible-option-required').text is not None ):
+            data['required'] = True
+        else:
+            data['required'] = False
+    except AttributeError:
+        data['required'] = False
+
+    try:
         data['type'] = soup.select_one('.ansible-option-type').text
     except AttributeError:
         data['type'] = None
 
     try:
-        data['version_added'] = soup.select_one('.ansible-option-versionadded').text.split()[2] + " " + \
+        data['version added'] = soup.select_one('.ansible-option-versionadded').text.split()[2] + " " + \
                                 soup.select_one('.ansible-option-versionadded').text.split()[3]
     except AttributeError:
-        data['version_added'] = None
+        data['version added'] = None
 
     # TODO get description without slash
     div_class = soup.find_all('div')
@@ -152,7 +159,7 @@ def extract_data(soup):
         pre_tags = soup.find_all('code', class_='docutils literal notranslate')
         all_tags = []
         for tag in pre_tags:
-           all_tags.append(tag.text.strip())
+            all_tags.append(tag.text.strip())
         data['tag'] = all_tags
     except:
         data['tag'] = None
@@ -162,12 +169,12 @@ def extract_data(soup):
     except:
         data['choices'] = None
 
-    #TODO default value not correct, is blank
+    # TODO default value not correct, is blank
     try:
         data['default value'] = soup.select_one(
-        '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark').previous_sibling.strip() \
+            '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark').previous_sibling.strip() \
             if soup.select_one(
-        '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark') else None
+            '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark') else None
     except:
         data['default value'] = None
 
@@ -247,7 +254,6 @@ def main() -> None:
     attributes_specification_dict: dict = get_attribute_specifications(attributes_values_dictionary)
     attributes_specification_html_dict: dict = get_attribute_specification_html(get_html_of_url(url))
 
-
     module_examples: dict = parse_examples_yaml(filename=filename)
 
     task = Ansible_Task('test', 'ansible.builtin.lineinfile',
@@ -257,6 +263,7 @@ def main() -> None:
 
     with open('attribute_specification.yaml', 'w') as file:
         yaml.dump(attributes_specification_html_dict, file, default_flow_style=False)
+
 
 if __name__ == "__main__":
     main()
