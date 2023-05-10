@@ -17,7 +17,7 @@ def get_html_of_url(url: str) -> str:
     return html
 
 
-# todo module name, descripton, parameters
+# todo module name, description, parameters
 def get_module_specification(url: str) -> str:
     response = requests.get(url)
     html = response.text
@@ -69,28 +69,7 @@ def extract_attribute_data(table_html):
         data['default value'] = None
 
     # TODO  "deprecated": false or true
-
-    # TODO - Question: Do we need version added, aliases, tags
-    try:
-        data['aliases'] = table_html.select_one('.ansible-option-aliases').text.split(': ')[1]
-    except AttributeError:
-        data['aliases'] = None
-
-    try:
-        data['version added'] = table_html.select_one('.ansible-option-versionadded').text.split()[2] + " " + \
-                                table_html.select_one('.ansible-option-versionadded').text.split()[3]
-    except AttributeError:
-        data['version added'] = None
-
-    try:
-        pre_tags = table_html.find_all('code', class_='docutils literal notranslate')
-        all_tags = []
-        for tag in pre_tags:
-            all_tags.append(tag.text.strip())
-        data['tag'] = all_tags
-    except:
-        data['tag'] = None
-
+    data['deprecate'] = True
     return data
 
 
