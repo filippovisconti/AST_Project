@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 from models import Ansible_Task
 
 
+# TODO clean code: delete unnecessary things
+# TODO create json file
 # This function takes a URL page as input and returns the html of the page
 def get_html_of_url(url: str) -> str:
     response = requests.get(url)
@@ -34,85 +36,6 @@ def parse_ansible_doc(url: str, enable_prints=False) -> dict:
     return attributes_dictionary
 
 
-# This function takes a dict and returns a dict of plausible values for the attributes
-def get_plausible_values(attributes_dictionary: dict) -> dict:
-    plausible_values_dict = {}
-    for parameter, comment in attributes_dictionary.items():
-        attribute_name = parameter.split()[0]
-        if "Choices:" in comment:
-            choices = comment.split("Choices: ")[1]  # Extract the choices substring
-            choices_list = choices.split(' ')  # Split the choices substring into a list of individual values
-            choices_list = [choice.strip('"') for choice in
-                            choices_list]  # Remove any surrounding quotes from the values
-            plausible_values = [elem for elem in choices_list if elem not in ['←', '(default)']]
-
-            plausible_values_dict[attribute_name] = plausible_values
-        else:
-            plausible_values_dict[attribute_name] = None
-    return plausible_values_dict
-
-
-# This function takes a dict and returns a dict of default values for the attributes
-def get_default_value(attributes_dictionary: dict) -> dict:
-    default_values_dict = {}
-    for parameter, comment in attributes_dictionary.items():
-        attribute_name = parameter.split()[0]
-        if "Choices:" in comment:
-            if "Choices:" in comment:
-                choices = comment.split("Choices: ")[1]
-                default_separator = ' ← (default)'
-                default_pos = choices.find(default_separator)
-                if default_pos != -1:
-                    default_value = choices.split(default_separator)[0]
-                    default_value = default_value.split(' ')[-1]
-            default_values_dict[attribute_name] = default_value
-        else:
-            default_values_dict[attribute_name] = None
-
-    return default_values_dict
-
-
-# This function takes a dict and returns a dict of value types for the attributes
-def get_value_types(attributes_dictionary: dict) -> dict:
-    valuetypes_dict = {}
-    for attribute, comment in attributes_dictionary.items():
-        attribute_name = attribute.split()[0]
-        if "string" in attribute:
-            valuetypes_dict[attribute_name] = "string"
-        elif "boolean" in attribute:
-            valuetypes_dict[attribute_name] = "boolean"
-        elif "int" in attribute:
-            valuetypes_dict[attribute_name] = "int"
-        elif "float" in attribute:
-            valuetypes_dict[attribute_name] = "float"
-        elif "double" in attribute:
-            valuetypes_dict[attribute_name] = "double"
-        elif "path" in attribute:
-            valuetypes_dict[attribute_name] = "path"
-        elif "any" in attribute:
-            valuetypes_dict[attribute_name] = "any"
-        else:
-            valuetypes_dict[attribute_name] = None
-    return valuetypes_dict
-
-
-# This function takes a dict and returns a dict of attribute version
-def get_attribute_version(attributes_dictionary: dict) -> dict:
-    attribute_version_dict = {}
-    for attribute, comment in attributes_dictionary.items():
-        attribute_name = attribute.split()[0]
-        attribute_version = None
-        if "added in" in attribute:
-            parts = attribute.split(' ')
-
-            for i in range(len(attribute_name) - 3):
-                if parts[i] == 'added' and parts[i + 1] == 'in':
-                    attribute_version = f"{parts[i + 2]} {parts[i + 3]}"
-                    break
-        attribute_version_dict[attribute_name] = attribute_version
-    return attribute_version_dict
-
-
 def extract_data(soup):
     data = {}
     div_class = soup.find_all('div')
@@ -129,7 +52,7 @@ def extract_data(soup):
         data['aliases'] = None
 
     try:
-        if (soup.select_one('.ansible-option-required').text is not None ):
+        if (soup.select_one('.ansible-option-required').text is not None):
             data['required'] = True
         else:
             data['required'] = False
@@ -198,28 +121,6 @@ def get_attribute_specification_html(html):
     return attribute_specifications
 
 
-# create dictionary of dictionaries
-def get_attribute_specifications(attributes_dictionary):
-    attribute_specifications_dict = {}
-    plausible_values_dictionary: dict = get_plausible_values(attributes_dictionary)
-    default_values_dict: dict = get_default_value(attributes_dictionary)
-    attributes_value_types_dict: dict = get_value_types(attributes_dictionary)
-    attributes_version_dict: dict = get_attribute_version(attributes_dictionary)
-
-    for attribute, comment in attributes_dictionary.items():
-        attribute_name = attribute.split()[0]
-        specification_dict = {
-            "value type": attributes_value_types_dict.get(attribute_name),
-            "version": attributes_version_dict.get(attribute_name),
-            "plausible values": plausible_values_dictionary.get(attribute_name),
-            "default value": default_values_dict.get(attribute_name),
-            "comment": comment
-        }
-        attribute_specifications_dict[attribute_name] = specification_dict
-        # print(f"{attribute_name}: {specification_dict}")
-    return attribute_specifications_dict
-
-
 def parse_examples_yaml(url: str = None,
                         filename: str = None,
                         enable_prints: bool = False) -> dict:
@@ -251,7 +152,7 @@ def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     filename = "lineinfile_examples.yaml"
     attributes_values_dictionary: dict = parse_ansible_doc(url)
-    attributes_specification_dict: dict = get_attribute_specifications(attributes_values_dictionary)
+
     attributes_specification_html_dict: dict = get_attribute_specification_html(get_html_of_url(url))
 
     module_examples: dict = parse_examples_yaml(filename=filename)
