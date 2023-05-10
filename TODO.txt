@@ -2,6 +2,9 @@ TODO
 
 
 [ ] Create dictionary to hold module specification -> use class and id types from html
+    [ ] Create json file with specification
+    [ ] Default value not correct, is blank
+    [ ] Get description without slash
 [ ] Decide generic specification format
 	- Check if parameters are mutually exclusive
 [ ] Create generator for every file type (paths, boolean) and design mutation strategies - mutate system state and configuration -> keep it simple
@@ -9,5 +12,3 @@ TODO
 	- Try to extract automatically
 [ ] Clean up code after each task
 
-[ ] Create json file with specification
-[ ] find the "required" value

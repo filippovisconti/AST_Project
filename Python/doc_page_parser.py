@@ -17,6 +17,13 @@ def get_html_of_url(url: str) -> str:
     return html
 
 
+# todo module name, descripton, parameters
+def get_module_specification(url: str) -> str:
+    response = requests.get(url)
+    html = response.text
+    return html
+
+
 def extract_attribute_data(table_html):
     data = {}
 
@@ -61,9 +68,9 @@ def extract_attribute_data(table_html):
     except:
         data['default value'] = None
 
-    # TODO  "deprecated": false
+    # TODO  "deprecated": false or true
 
-    # TODO - Question: Do we need version added, aliases
+    # TODO - Question: Do we need version added, aliases, tags
     try:
         data['aliases'] = table_html.select_one('.ansible-option-aliases').text.split(': ')[1]
     except AttributeError:
@@ -104,55 +111,6 @@ def get_attribute_specification(html):
     return attribute_specifications
 
 
-# TODO - Question: Do we need this?
-# This function takes a URL for an (Ansible documentation) page as input. It returns a dictionary where the keys are
-# the attribute names and the values are the descriptions of those attributes.
-def parse_ansible_doc(url: str, enable_prints=False) -> dict:
-    html = get_html_of_url(url)
-
-    soup = BeautifulSoup(html, 'html.parser')
-    attributes_table = soup.find('table')
-    with open("ansible_lininfile.html", "w") as file:
-        # Write the HTML content to the file
-        file.write(attributes_table.prettify())
-
-    attributes_df: pd.DataFrame = pd.read_html(str(attributes_table))[0]
-    attributes_dictionary = dict(zip(attributes_df.iloc[:, 0], attributes_df.iloc[:, 1]))
-
-    if enable_prints:
-        print(attributes_df)
-        pprint.pprint(attributes_dictionary)
-    return attributes_dictionary
-
-
-# TODO do we need this?
-def parse_examples_yaml(url: str = None,
-                        filename: str = None,
-                        enable_prints: bool = False) -> dict:
-    if url is None and filename is None:
-        raise Exception("Either url or filename must be provided")
-
-    if url is not None and filename is not None:
-        raise Exception("Only one of url or filename must be provided")
-
-    if url is not None:
-        response = requests.get(url)
-
-        soup = BeautifulSoup(response.text, 'html.parser')
-        pre = soup.find('pre')
-
-        yaml_dict = yaml.safe_load(pre.text)
-
-    if filename is not None:
-        with open(filename, 'r') as stream:
-            yaml_dict = yaml.safe_load(stream)
-
-    if enable_prints:
-        pprint.pprint(yaml_dict)
-
-    return yaml_dict
-
-
 def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
 
@@ -169,12 +127,6 @@ def main() -> None:
         json.dump(attributes_specification, file)
 
     print(f"The JSON file '{filename}' has been created.")
-
-    # TODO - Question: Do we need this?
-    filename = "lineinfile_examples.yaml"
-    attributes_values_dictionary: dict = parse_ansible_doc(url)
-    task = Ansible_Task('test', 'ansible.builtin.lineinfile', attributes_values_dictionary)
-    module_examples: dict = parse_examples_yaml(filename=filename)
 
 
 if __name__ == "__main__":
