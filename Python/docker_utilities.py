@@ -73,7 +73,7 @@ def build_debian_image():
     logging.info(f"Built {image_name} image")
 
 
-def create_cnc_machine() -> None:
+def create_cnc_machine() -> docker.models.containers.Container:
     # Create containers
 
     container_name = f'cnc_machine'
@@ -107,18 +107,9 @@ def create_cnc_machine() -> None:
         f'Started container {container_name} ' +
         f'with IP address {container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]}'
     )
-
-    # res = container.exec_run(
-    #     'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/test_playbook.yaml'
-    # > /root/ansible/output.txt'
-    # )
-    # print(res)
+    return container
 
 
-# apt update && apt install net-tools && ifconfig
-# ansible-playbook -i inventory.ini test_playbook.yaml
-# chmod 600 ansible_ed25519
-# Create function to create containers
 def create_containers() -> list[docker.models.containers.Container]:
     # Create containers
     containers = []
@@ -174,7 +165,7 @@ def reset_containers(containers: list[docker.models.containers.Container]):
         logging.info(f'Restarted container {cont.name}')
 
 
-def delete_containers():
+def delete_containers_and_network():
     # Remove containers
     for container in client.containers.list():
         # container.stop()
@@ -202,9 +193,15 @@ def run_ansible_playbook(playbook_path: str) -> int:
     return res.exit_code
 
 
-def main():
-    pass
+def setup_infrastructure():
+    create_network()
+    build_ansible_image()
+    build_debian_image()
+    containers = create_containers()
+    cnc_machine = create_cnc_machine()
+
+    return containers, cnc_machine
 
 
 if __name__ == '__main__':
-    main()
+    pass

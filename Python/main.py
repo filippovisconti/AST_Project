@@ -4,11 +4,7 @@ from docker_utilities import *
 def main():
     # Call create_containers function
     try:
-        create_network()
-        build_ansible_image()
-        build_debian_image()
-        containers = create_containers()
-        create_cnc_machine()
+        containers, cnc_machine = setup_infrastructure()
 
         playbook_path = 'test_playbook.yaml'
         run_ansible_playbook(playbook_path=playbook_path)
@@ -19,7 +15,8 @@ def main():
     except Exception:
         logging.exception("Exception occurred. Cleaning up...")
         # TODO: Remove containers and network
-    delete_containers()
+
+    delete_containers_and_network()
 
 
 if __name__ == '__main__':
