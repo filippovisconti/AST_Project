@@ -46,11 +46,10 @@ def extract_attribute_data(table_html):
     except AttributeError:
         data['required'] = False
 
-    # TODO get description without slash
     div_class = table_html.find_all('div')
     try:
-        data['description'] = div_class[-1].text.replace('\n', ' ')
-        data['description'] = data['description'].replace('\\', ' ')
+        data['description'] = div_class[-1].text.replace('\n', ' ').replace('\\', ' ')
+        #data['description'] = data['description'].replace('\\', ' ')
     except:
         data['description'] = None
 

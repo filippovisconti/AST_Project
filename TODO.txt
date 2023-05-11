@@ -2,9 +2,7 @@ TODO
 
 
 [ ] Create dictionary to hold module specification -> use class and id types from html
-    [ ] Create json file with specification
-    [ ] Default value not correct, is blank
-    [ ] Get description without slash
+    [ ] get module name
 [ ] Decide generic specification format
 	- Check if parameters are mutually exclusive
 [ ] Create generator for every file type (paths, boolean) and design mutation strategies - mutate system state and configuration -> keep it simple
