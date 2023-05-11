@@ -1,15 +1,8 @@
-import pandas as pd
-import pprint
 import requests
-import yaml
 import json
 from bs4 import BeautifulSoup
 
-from models import Ansible_Task
 
-
-# TODO clean code: delete unnecessary things
-# TODO create json file
 # This function takes a URL page as input and returns the html of the page
 def get_html_of_url(url: str) -> str:
     response = requests.get(url)
@@ -17,11 +10,32 @@ def get_html_of_url(url: str) -> str:
     return html
 
 
-# todo module name, description, parameters
-def get_module_specification(url: str) -> str:
-    response = requests.get(url)
-    html = response.text
-    return html
+def get_module_specification(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    data = {}
+    module_name = soup.find(class_='breadcrumb-item active').text.strip()
+    description = soup.find(class_='admonition-title').text.strip()
+    data['module_name'] = module_name
+    data['description'] = description
+    data['options'] = get_attribute_specification(html)
+    return data
+
+
+def get_attribute_specification(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    soup = soup.find('table')
+    cell = soup.find_all('tr')
+
+    attribute_specifications = {}
+    ignore_header = True
+
+    for attribute_class in cell:
+        if ignore_header is False:
+            specifications = extract_attribute_data(attribute_class)
+            attribute_specifications[specifications['name']] = specifications
+        else:
+            ignore_header = False
+    return attribute_specifications
 
 
 def extract_attribute_data(table_html):
@@ -49,7 +63,7 @@ def extract_attribute_data(table_html):
     div_class = table_html.find_all('div')
     try:
         data['description'] = div_class[-1].text.replace('\n', ' ').replace('\\', ' ')
-        #data['description'] = data['description'].replace('\\', ' ')
+        # data['description'] = data['description'].replace('\\', ' ')
     except:
         data['description'] = None
 
@@ -68,39 +82,16 @@ def extract_attribute_data(table_html):
     return data
 
 
-def get_attribute_specification(html):
-    soup = BeautifulSoup(html, 'html.parser')
-    soup = soup.find('table')
-    cell = soup.find_all('tr')
-
-    attribute_specifications = {}
-    ignore_header = True
-
-    for attribute_class in cell:
-        if ignore_header is False:
-            specifications = extract_attribute_data(attribute_class)
-            attribute_specifications[specifications['name']] = specifications
-        else:
-            ignore_header = False
-    return attribute_specifications
+def create_jsonfile(filename, content):
+    with open(filename, "w") as file:
+        json.dump(content, file)
 
 
 def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
-
-    attributes_specification: dict = get_attribute_specification(get_html_of_url(url))
-
-    # for attribute_name, specification in attributes_specification.items():
-    #    print(f"{attribute_name}: {specification}")
-
-    # Define the filename and path for the JSON file
-    filename = "attribute_specification.json"
-
-    # Write data to the JSON file
-    with open(filename, "w") as file:
-        json.dump(attributes_specification, file)
-
-    print(f"The JSON file '{filename}' has been created.")
+    html = get_html_of_url(url)
+    module_specification = get_module_specification(html)
+    create_jsonfile("module_specification.json", module_specification)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ TODO
 
 
 [ ] Create dictionary to hold module specification -> use class and id types from html
-    [ ] get module name
+    [ ] "deprecated": false or true
 [ ] Decide generic specification format
 	- Check if parameters are mutually exclusive
 [ ] Create generator for every file type (paths, boolean) and design mutation strategies - mutate system state and configuration -> keep it simple
