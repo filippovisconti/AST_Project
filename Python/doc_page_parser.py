@@ -59,12 +59,8 @@ def extract_attribute_data(table_html):
     except:
         data['choices'] = None
 
-    # TODO default value not correct, is blank
     try:
-        data['default value'] = table_html.select_one(
-            '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark').previous_sibling.strip() \
-            if table_html.select_one(
-            '.ansible-option-cell ul.simple li span.ansible-option-choices-default-mark') else None
+        data['default value'] = table_html.find(class_='ansible-option-default-bold').text.strip()
     except:
         data['default value'] = None
 
