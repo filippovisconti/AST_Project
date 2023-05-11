@@ -70,7 +70,7 @@ def extract_attribute_data(table_html):
     try:
         data['choices'] = [li.text.strip() for li in table_html.select('.ansible-option-cell ul.simple li')]
     except:
-        data['choices'] = None
+        data['choices'] = []
 
     try:
         data['default value'] = table_html.find(class_='ansible-option-default-bold').text.strip()
@@ -87,11 +87,16 @@ def create_jsonfile(filename, content):
         json.dump(content, file)
 
 
+def fix_name(name):
+    return name.split('.')[-1].split(' ')[0]
+
+
 def main() -> None:
     url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
     html = get_html_of_url(url)
     module_specification = get_module_specification(html)
-    create_jsonfile("module_specification.json", module_specification)
+    name = fix_name(module_specification['module_name'])
+    create_jsonfile(f"json/{name}_specification.json", module_specification)
 
 
 if __name__ == "__main__":
