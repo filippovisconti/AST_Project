@@ -26,13 +26,13 @@ def get_attribute_specification(html):
     soup = soup.find('table')
     cell = soup.find_all('tr')
 
-    attribute_specifications = {}
+    attribute_specifications = []
     ignore_header = True
 
     for attribute_class in cell:
         if ignore_header is False:
             specifications = extract_attribute_data(attribute_class)
-            attribute_specifications[specifications['name']] = specifications
+            attribute_specifications.append(specifications)
         else:
             ignore_header = False
     return attribute_specifications
@@ -78,7 +78,7 @@ def extract_attribute_data(table_html):
         data['default value'] = None
 
     # TODO  "deprecated": false or true
-    data['deprecate'] = True
+    data['deprecated'] = False
     return data
 
 
