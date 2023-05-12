@@ -1,6 +1,7 @@
 import requests
-import json
 from bs4 import BeautifulSoup
+
+import json
 
 
 # This function takes a URL page as input and returns the html of the page
@@ -15,7 +16,7 @@ def get_module_specification(html):
     data = {}
     module_name = soup.find(class_='breadcrumb-item active').text.strip()
     description = soup.find(class_='admonition-title').text.strip()
-    data['module_name'] = module_name
+    data['module_name'] = module_name.split(' ')[0]
     data['description'] = description
     data['options'] = get_attribute_specification(html)
     return data
@@ -50,7 +51,10 @@ def extract_attribute_data(table_html):
     try:
         data['type'] = table_html.select_one('.ansible-option-type').text
     except AttributeError:
-        data['type'] = None
+        data['type'] = ''
+
+    if data['type'] == 'any':
+        data['type'] = 'mode'
 
     try:
         if table_html.select_one('.ansible-option-required').text is not None:
@@ -68,14 +72,16 @@ def extract_attribute_data(table_html):
         data['description'] = None
 
     try:
-        data['choices'] = [li.text.strip() for li in table_html.select('.ansible-option-cell ul.simple li')]
+        data['choices'] = [li.text.strip().split(' ')[0] for li in
+                           table_html.select('.ansible-option-cell ul.simple li')]
     except:
         data['choices'] = []
 
     try:
-        data['default value'] = table_html.find(class_='ansible-option-default-bold').text.strip()
+        tmp = table_html.find(class_='ansible-option-default-bold').text.strip()
+        data['default'] = tmp.split(' ')[0]
     except:
-        data['default value'] = None
+        data['default'] = None
 
     # TODO  "deprecated": false or true
     data['deprecated'] = False
@@ -91,8 +97,8 @@ def fix_name(name):
     return name.split('.')[-1].split(' ')[0]
 
 
-def main() -> None:
-    url = "https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html"
+def generate_json(builtin_module_name: str) -> None:
+    url = f"https://docs.ansible.com/ansible/latest/collections/ansible/builtin/{builtin_module_name}_module.html"
     html = get_html_of_url(url)
     module_specification = get_module_specification(html)
     name = fix_name(module_specification['module_name'])
@@ -100,4 +106,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    generate_json()

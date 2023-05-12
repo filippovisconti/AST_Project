@@ -142,11 +142,6 @@ def create_containers() -> list[docker.models.containers.Container]:
             f'Started container {container_name} ' +
             f'with IP address {container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]}'
         )
-        # command: str = 'apt update'
-        # container.exec_run(command)
-
-        # command = 'apt install net-tools openssh-server python3 sudo -y'
-        # container.exec_run(command)
 
         command = 'service ssh start'
         container.exec_run(command)
@@ -177,20 +172,32 @@ def delete_containers_and_network():
     logging.info("Removed network")
 
 
-def run_ansible_playbook(playbook_path: str) -> int:
-    logging.info("Running Ansible playbook...")
-    res = client.containers.get('cnc_machine').exec_run(
-        f'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
-    )
-
+def exec_run_wrapper(cnc: docker.models.containers.Container, command: str):
+    res = cnc.exec_run(command)
     if res.exit_code == 0:
-        logging.info("Ansible playbook executed successfully")
+        logging.info(f"Executed command {command} successfully")
         logging.info(res.output.decode('utf-8'))
     else:
-        logging.error(f"Ansible playbook failed - code {res.exit_code}")
+        logging.error(f"Command {command} failed - code {res.exit_code}")
         logging.error(res.output.decode('utf-8'))
 
     return res.exit_code
+
+
+def run_ansible_playbook(playbook_path: str) -> int:
+    logging.info("Running Ansible playbook...")
+    cnc = client.containers.get('cnc_machine')
+
+    syntax_check = f'ansible-playbook --syntax-check  -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
+    actual_run = f'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
+    res = exec_run_wrapper(cnc, syntax_check)
+    if res != 0:
+        logging.error(f"FAILED SYNTAX CHECK. ABORTING...")
+        return res
+    else:
+        logging.info(f"SYNTAX CHECK OK. RUNNING PLAYBOOK...")
+
+    return exec_run_wrapper(cnc, actual_run)
 
 
 def setup_infrastructure():

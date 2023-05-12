@@ -1,6 +1,10 @@
+import pprint
 from typing import List, Optional
 
+import yaml
+
 import json
+from generators import generate_random_parameter_value
 
 
 class AnsibleModuleParameter:
@@ -144,13 +148,126 @@ class Ansible_Task:
 
         return part + "\n"
 
+    def __repr__(self):
+        return self.__str__()
+
+    def write_to_file(self, file_path):
+        with open(file_path, 'w') as f:
+            f.write(str(self))
+
     @classmethod
     def from_json(cls, file_path: str):
         pass
 
 
+class Ansible_Playbook:
+    """
+    Ansible_Playbook class
+    """
+
+    def __init__(self, playbook_name, hosts, tasks):
+        self.playbook_name: str = playbook_name
+        self.hosts: str = hosts
+        self.tasks: list[Ansible_Task] = tasks
+
+    def to_yaml(self, file_path):
+        playbook_dict = {"- name": self.playbook_name,
+                         "  hosts": self.hosts,
+                         "    " : self.tasks}
+        with open(file_path, 'w') as f:
+            f.write("- name: " + self.playbook_name + "\n")
+            f.write("  hosts: " + self.hosts + "\n")
+            f.write("  tasks:\n")
+            for task in self.tasks:
+                f.write("  - name: " + task.task_name + "\n")
+                f.write("    " + task.task_module + ":\n")
+                for key, value in task.task_args.items():
+                    f.write("      " + key + ": " + str(value) + "\n")
+
+
+def create_task_from_spec_default(spec: AnsibleModuleSpecification) -> Ansible_Task:
+    """
+    Create an Ansible_Task from an AnsibleModuleSpecification using default values.
+
+    Parameters
+    ----------
+    spec : AnsibleModuleSpecification
+        The AnsibleModuleSpecification to create the Ansible_Task from.
+
+    Returns
+    -------
+    Ansible_Task
+        The created Ansible_Task.
+    """
+    task_name = f'Run {spec.module_name} module'
+    task_module = spec.module_name
+    task_args = {}
+    for option in spec.options:
+        # if option.required:
+        # if mutually_exclusive_with:
+        try:
+            if option.default:
+                task_args[option.name] = option.default
+            elif option.choices:
+                task_args[option.name] = option.choices[0]
+            elif option.type == 'list':
+                task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
+                                                                         element_type=option.element_type)
+            else:
+                task_args[option.name] = generate_random_parameter_value(parameter_type=option.type)
+        except Exception as e:
+            print(e)
+            print(option.name)
+
+    return Ansible_Task(task_name, task_module, task_args)
+
+
+def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> list[Ansible_Task]:
+    """
+    Create an Ansible_Task from an AnsibleModuleSpecification using random values.
+
+    Parameters
+    ----------
+    spec : AnsibleModuleSpecification
+        The AnsibleModuleSpecification to create the Ansible_Task from.
+
+    Returns
+    -------
+    Ansible_Task
+        The created Ansible_Task.
+    """
+    task_name = f'Run {spec.module_name} module'
+    task_module = spec.module_name
+    tasks = []
+    for i in range(3):
+        task_args = {}
+        # exclusive_parameters = []
+
+        for option in spec.options:
+            try:
+                if option.type == 'list':
+                    task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
+                                                                             choices=option.choices,
+                                                                             element_type=option.element_type)
+                else:
+                    task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
+                                                                             choices=option.choices)
+            except Exception as e:
+                print(e)
+                print(option.name)
+
+        tasks.append(Ansible_Task(f"{task_name} {i}", task_module, task_args))
+
+    return tasks
+
+
 def main():
-    pass
+    from doc_page_parser import generate_json
+    module_name = 'lineinfile'
+    generate_json(module_name)
+    t1 = create_task_from_spec_random(AnsibleModuleSpecification.from_json(f'json/{module_name}_specification.json'))
+    p1 = Ansible_Playbook('Playbook name', 'all', t1)
+    p1.to_yaml('trash/test.yaml')
 
 
 if __name__ == '__main__':

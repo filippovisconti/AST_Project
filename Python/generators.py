@@ -20,12 +20,22 @@ def generate_random_array(element_type: str, min_length: int = 1, max_length: in
 def generate_random_parameter_value(parameter_type: str, choices: List = None, element_type: str = None) -> \
         Union[str, int, float, bool, list]:
     """Generates a random value of the specified parameter_type."""
-    if parameter_type == "str":
+    if parameter_type == "str" or parameter_type == "string":
         if choices:
             return random.choice(choices)
         else:
             return f"str_{random.randint(0, 100)}"
-    elif parameter_type == "int":
+    elif parameter_type == "path":
+        if choices:
+            return random.choice(choices)
+        else:
+            return f"/tmp/file_{random.randint(0, 100)}"
+    elif parameter_type == "mode":
+        if choices:
+            return random.choice(choices)
+        else:
+            return "0644"
+    elif parameter_type == "int" or parameter_type == "number":
         if choices:
             return random.choice(choices)
         else:
@@ -35,7 +45,7 @@ def generate_random_parameter_value(parameter_type: str, choices: List = None, e
             return random.choice(choices)
         else:
             return random.uniform(0.0, 100.0)
-    elif parameter_type == "bool":
+    elif parameter_type == "bool" or parameter_type == "boolean":
         return random.choice([True, False])
     elif parameter_type == "list":
         if element_type:
