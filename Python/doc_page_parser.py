@@ -83,6 +83,23 @@ def extract_attribute_data(table_html):
     except:
         data['default'] = None
 
+    try:
+        description = div_class[-1].text.replace('\n', ' ').replace('\\', ' ')
+        if "Mutually exclusive with " in description:
+            keyword = "Mutually exclusive with"
+            values = []
+            lines = description.split('\n')
+            for line in lines:
+                print(line)
+                if keyword in line:
+                    value = line.split(keyword)[1].split('.')[0].strip()
+
+                    values.append(value)
+            print("Mutually exclusive with values:", values)
+        data['mutually_exclusive_with'] = values
+    except:
+        data['mutually_exclusive_with'] = None
+
     # TODO  "deprecated": false or true
     data['deprecated'] = False
     return data
