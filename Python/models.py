@@ -244,6 +244,10 @@ def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> list[Ansib
         # exclusive_parameters = []
 
         for option in spec.options:
+            if option.mutually_exclusive_with:
+                if not option.required:
+                    print(f"Mutually exclusive parameter {option.name} is not required")
+                    continue
             try:
                 if option.type == 'list':
                     task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,

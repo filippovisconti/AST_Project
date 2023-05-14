@@ -1,0 +1,27 @@
+- name: Testing lineinfile
+  hosts: all
+  tasks:
+  - name: Run ansible.builtin.lineinfile module
+    ansible.builtin.lineinfile:
+      attributes: str_75
+      backrefs: false
+      backup: false
+      create: false
+      firstmatch: false
+      group: str_38
+      insertafter: "EOF"
+      insertbefore: "BOF"
+      line: str_81
+      mode: 0644
+      others: str_7
+      owner: str_48
+      path: /tmp/file_95
+      regexp: str_57
+      search_string: str_5
+      selevel: str_59
+      serole: str_30
+      setype: str_11
+      seuser: str_33
+      state: "present"
+      unsafe_writes: false
+      validate: str_45
