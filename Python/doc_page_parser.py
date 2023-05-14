@@ -67,7 +67,6 @@ def extract_attribute_data(table_html):
     div_class = table_html.find_all('div')
     try:
         data['description'] = div_class[-1].text.replace('\n', ' ').replace('\\', ' ')
-        # data['description'] = data['description'].replace('\\', ' ')
     except:
         data['description'] = None
 
@@ -99,7 +98,6 @@ def extract_attribute_data(table_html):
                     value = line.split(keyword2)[1].split('.')[0].strip().split(' or ')
                     for v in value:
                         values.append(v)
-            print("Mutually exclusive with values:", values)
         data['mutually_exclusive_with'] = values
     except:
         data['mutually_exclusive_with'] = []
