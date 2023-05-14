@@ -90,15 +90,15 @@ def extract_attribute_data(table_html):
             values = []
             lines = description.split('\n')
             for line in lines:
-                if keyword1 in line:
-                    value = line.split(keyword1)[1].split('.')[0].strip().split(' and ')
-                    for v in value:
-                        values.append(v)
-                if keyword2 in line:
-                    value = line.split(keyword2)[1].split('.')[0].strip().split(' or ')
-                    for v in value:
-                        values.append(v)
-        data['mutually_exclusive_with'] = values
+                print(line)
+                if keyword in line:
+                    value = line.split(keyword)[1].split('.')[0].strip()
+
+                    values.append(value)
+            print("Mutually exclusive with values:", values)
+            data['mutually_exclusive_with'] = values
+        else:
+            data['mutually_exclusive_with'] = []
     except:
         data['mutually_exclusive_with'] = []
 
