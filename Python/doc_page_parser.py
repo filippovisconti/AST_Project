@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -33,7 +35,8 @@ def get_attribute_specification(html):
     for attribute_class in cell:
         if ignore_header is False:
             specifications = extract_attribute_data(attribute_class)
-            attribute_specifications.append(specifications)
+            if specifications['name'] not in ['others', 'validate', ' gid', 'group', 'user']:
+                attribute_specifications.append(specifications)
         else:
             ignore_header = False
     return attribute_specifications
@@ -90,12 +93,16 @@ def extract_attribute_data(table_html):
             values = []
             lines = description.split('\n')
             for line in lines:
-                print(line)
-                if keyword in line:
-                    value = line.split(keyword)[1].split('.')[0].strip()
-
-                    values.append(value)
-            print("Mutually exclusive with values:", values)
+                if keyword1 in line:
+                    value = line.split(keyword1)[1].split('.')[0].strip().split(' and ')
+                    for v in value:
+                        values.append(v)
+                if keyword2 in line:
+                    value = line.split(keyword2)[1].split('.')[0].strip().split(' or ')
+                    for v in value:
+                        values.append(v)
+            if values:
+                logging.info(f"Mutually exclusive with values: {values}")
             data['mutually_exclusive_with'] = values
         else:
             data['mutually_exclusive_with'] = []

@@ -1,7 +1,7 @@
-import pprint
+import logging
 from typing import List, Optional
 
-import yaml
+logging.basicConfig(level=logging.INFO)
 
 import json
 from generators import generate_random_parameter_value
@@ -173,7 +173,7 @@ class Ansible_Playbook:
     def to_yaml(self, file_path):
         playbook_dict = {"- name": self.playbook_name,
                          "  hosts": self.hosts,
-                         "    " : self.tasks}
+                         "    ": self.tasks}
         with open(file_path, 'w') as f:
             f.write("- name: " + self.playbook_name + "\n")
             f.write("  hosts: " + self.hosts + "\n")
@@ -205,6 +205,10 @@ def create_task_from_spec_default(spec: AnsibleModuleSpecification) -> Ansible_T
     for option in spec.options:
         # if option.required:
         # if mutually_exclusive_with:
+        if option.mutually_exclusive_with:
+            if not option.required:
+                logging.info(f"Mutually exclusive parameter {option.name} is not required")
+                continue
         try:
             if option.default:
                 task_args[option.name] = option.default
@@ -239,14 +243,19 @@ def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> list[Ansib
     task_name = f'Run {spec.module_name} module'
     task_module = spec.module_name
     tasks = []
-    for i in range(3):
+    # TODO: unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required + picked choice of random parameters -> exclude mutually exclusive parameters
+    # TODO: Get system state inside generators
+    # TODO: more modules
+    # TODO: run same playbook on different systems and system states
+    #  (strace)
+    for i in range(100):
         task_args = {}
         # exclusive_parameters = []
 
         for option in spec.options:
             if option.mutually_exclusive_with:
                 if not option.required:
-                    print(f"Mutually exclusive parameter {option.name} is not required")
+                    logging.info(f"Mutually exclusive parameter {option.name} is not required")
                     continue
             try:
                 if option.type == 'list':
@@ -257,8 +266,8 @@ def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> list[Ansib
                     task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
                                                                              choices=option.choices)
             except Exception as e:
-                print(e)
-                print(option.name)
+                logging.error(e)
+                logging.error(option.name)
 
         tasks.append(Ansible_Task(f"{task_name} {i}", task_module, task_args))
 
