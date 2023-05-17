@@ -1,12 +1,45 @@
 TODO
 
-
-[ ] Create dictionary to hold module specification -> use class and id types from html
-    [ ] "deprecated": false or true
+[ ] "deprecated": false or true
 [ ] Decide generic specification format
 	- Check if parameters are mutually exclusive
 [ ] Create generator for every file type (paths, boolean) and design mutation strategies - mutate system state and configuration -> keep it simple
 	- Get setup code from integration tests of modules
 	- Try to extract automatically
 [ ] Clean up code after each task
+
+NEXT STEPS:
+[ ] unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required + picked choice of random parameters -> exclude mutually exclusive parameters
+[ ] exercise more modules to see if there are any limitations
+[ ] get system state inside generators
+[ ] run same playbook on different systems and system states
+    (e.g. strace monitor the execution with the program strace to find fuzzing strategies)
+
+- then further optimize it, e.g.:
+    - finding bug (would be an extra)
+
+
+15.05.2023
+- generate valid file path
+- use keyword parameter in json dumps method to get better file view
+- identify more data types (look in the others modules, one is for e.g. any)
+- input module_name: command line interface for our tool
+- setup code: install packages for some modules (e.g. if setup code exist, then run it)
+- fully automate the system: every module has integration tests -> have option in tool
+- mutate integration tests
+(- indefinitely create test cases till we stop it sanity check for an actual bug that still crashes)
+- tool need to get access to the state of the system
+    - decide how many tasks we need to create
+    - need a way to don't trigger the same parameters
+    - values that not make sense -> need to make them a lil bit smarter
+        e.g. file path: create any random file path for any depth (add all possible path),
+                        or create it by calling the system call (have the state of the systems)
+                        - use API from python (e.g. OS) to get list of available users, etc. but need the system state like where the playback
+                            Python code (e.g. fuzzing tool) should run inside the docker containers bc need access to the state of the system
+                            -> docker container should have Python installation, can get the state of the system, run the tool directly in the container
+                        - or let user decide where to run the tool
+                        - can program generator have access to the state of the system where the progrem is and if yes, how?
+                            -> we need to find a efficient solution for that, either move the code or run on ourselfs
+                             (running docker on itself is not very efficient)
+
 
