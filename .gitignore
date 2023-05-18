@@ -244,3 +244,9 @@ Temporary Items
 .vscode/
 
 Python/.idea/
+
+Python/notes.txt
+
+Python/specs/lineinfile_specification.json
+
+*.yaml
