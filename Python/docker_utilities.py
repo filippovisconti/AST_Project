@@ -1,6 +1,7 @@
 import logging
 import os
 import platform
+import sys
 
 import docker
 
@@ -87,6 +88,10 @@ def create_cnc_machine() -> docker.models.containers.Container:
                                                  'bind': '/root/ansible',
                                                  'mode': 'rw'
                                              },
+                                             f'{cwd}/specs': {
+                                                 'bind': '/root/specs/',
+                                                 'mode': 'rw'
+                                             },
                                              f'{cwd}/ansible/ansible.cfg': {
                                                  'bind': '/root/.ansible.cfg',
                                                  'mode': 'rw'
@@ -126,6 +131,14 @@ def create_containers() -> list[docker.models.containers.Container]:
                     'bind': '/root/.ssh/',
                     'mode': 'rw'
                 },
+                f'{cwd}/ansible/fuzzed_playbooks': {
+                    'bind': '/root/fuzzed_playbooks',
+                    'mode': 'rw'
+                },
+                f'{cwd}/specs': {
+                    'bind': '/root/specs/',
+                    'mode': 'rw'
+                },
                 f'{cwd}/ansible/sshd_config.d': {
                     'bind': '/etc/ssh/sshd_config.d/',
                     'mode': 'rw'
@@ -152,7 +165,7 @@ def create_containers() -> list[docker.models.containers.Container]:
     return containers
 
 
-def reset_containers(containers: list[docker.models.containers.Container]):
+def reset_containers(containers: list[docker.models.containers.Container]) -> None:
     logging.info(f'Restarting containers...')
     for cont in containers:
         cont.restart()
@@ -171,6 +184,8 @@ def delete_containers_and_network():
     client.networks.get(network_name).remove()
     logging.info("Removed network")
 
+    sys.exit(0)
+
 
 def exec_run_wrapper(cnc: docker.models.containers.Container, command: str):
     res = cnc.exec_run(command)
@@ -180,6 +195,7 @@ def exec_run_wrapper(cnc: docker.models.containers.Container, command: str):
     else:
         logging.error(f"Command {command} failed - code {res.exit_code}")
         logging.error(res.output.decode('utf-8'))
+        raise RuntimeError('Failed')
 
     return res.exit_code
 

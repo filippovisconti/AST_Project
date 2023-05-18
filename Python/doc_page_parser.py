@@ -116,19 +116,23 @@ def extract_attribute_data(table_html):
 
 def create_jsonfile(filename, content):
     with open(filename, "w") as file:
-        json.dump(content, file)
+        json.dump(content, file, sort_keys=True, indent=2)
 
 
 def fix_name(name):
     return name.split('.')[-1].split(' ')[0]
 
 
-def generate_json(builtin_module_name: str) -> None:
+def generate_json(builtin_module_name: str, dest_dir: str = 'specs') -> None:
     url = f"https://docs.ansible.com/ansible/latest/collections/ansible/builtin/{builtin_module_name}_module.html"
+
     html = get_html_of_url(url)
     module_specification = get_module_specification(html)
+
     name = fix_name(module_specification['module_name'])
-    create_jsonfile(f"json/{name}_specification.json", module_specification)
+    file_path = f"{dest_dir}/{name}_specification.json"
+
+    create_jsonfile(file_path, module_specification)
 
 
 if __name__ == "__main__":

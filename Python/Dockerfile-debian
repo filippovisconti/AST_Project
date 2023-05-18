@@ -1,9 +1,6 @@
 FROM debian:latest
 
+RUN mkdir -p /root/specs
 RUN apt update
 RUN apt install net-tools openssh-server python3 sudo -y
-
-#RUN service ssh start
-
-
-# RUN ANSIBLE_CONFIG=/root/ansible/ansible.cfg
+RUN ["/bin/bash", "-c", "touch /tmp/file_{0..99}"]

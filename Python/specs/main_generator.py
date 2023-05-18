@@ -1,10 +1,70 @@
-import logging
-from typing import List, Optional
-
-logging.basicConfig(level=logging.INFO)
-
+import argparse
 import json
-from generators import generate_random_parameter_value
+import logging
+import random
+from typing import List, Optional
+from typing import Union
+
+logging.basicConfig(filename='/root/specs/specs_fuzzer.log', level=logging.INFO)
+
+number_of_tasks = 10
+
+
+def generate_random_array(element_type: str, min_length: int = 1, max_length: int = 10) -> List:
+    """Generates a random list of values of the specified element_type."""
+    length = random.randint(min_length, max_length)
+    if element_type == "str":
+        return [str(random.randint(0, 100)) for _ in range(length)]
+    elif element_type == "int":
+        return [random.randint(0, 100) for _ in range(length)]
+    elif element_type == "float":
+        return [random.uniform(0.0, 100.0) for _ in range(length)]
+    elif element_type == "bool":
+        return [random.choice([True, False]) for _ in range(length)]
+    else:
+        raise ValueError(f"Unsupported element_type: {element_type}")
+
+
+def generate_random_parameter_value(parameter_type: str, choices: List = None, element_type: str = None) -> \
+        Union[str, int, float, bool, list]:
+    """Generates a random value of the specified parameter_type."""
+    if parameter_type == "str" or parameter_type == "string":
+        if choices:
+            return random.choice(choices)
+        else:
+            return f"str_{random.randint(0, 100)}"
+    elif parameter_type == "path":
+        if choices:
+            return random.choice(choices)
+        else:
+            dir = ["bin", "dev", "etc", "home", "lib", "mnt", "opt", "proc", "root", "sbin", "srv", "sys", "tmp", "usr",
+                   "var"]
+            return f"/{dir}/file_{random.randint(0, 100)}"
+
+    elif parameter_type == "mode":
+        if choices:
+            return random.choice(choices)
+        else:
+            return "0644"
+    elif parameter_type == "int" or parameter_type == "number":
+        if choices:
+            return random.choice(choices)
+        else:
+            return random.randint(0, 100)
+    elif parameter_type == "float":
+        if choices:
+            return random.choice(choices)
+        else:
+            return random.uniform(0.0, 100.0)
+    elif parameter_type == "bool" or parameter_type == "boolean":
+        return random.choice([True, False])
+    elif parameter_type == "list":
+        if element_type:
+            return generate_random_array(element_type)
+        else:
+            raise ValueError("Missing element_type for list parameter.")
+    else:
+        raise ValueError(f"Unsupported parameter_type: {parameter_type}")
 
 
 class AnsibleModuleParameter:
@@ -226,7 +286,7 @@ def create_task_from_spec_default(spec: AnsibleModuleSpecification) -> Ansible_T
     return Ansible_Task(task_name, task_module, task_args)
 
 
-def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> list[Ansible_Task]:
+def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> Ansible_Task:
     """
     Create an Ansible_Task from an AnsibleModuleSpecification using random values.
 
@@ -242,45 +302,60 @@ def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> list[Ansib
     """
     task_name = f'Run {spec.module_name} module'
     task_module = spec.module_name
-    tasks = []
-    # TODO: unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required + picked choice of random parameters -> exclude mutually exclusive parameters
-    # TODO: Get system state inside generators
-    # TODO: more modules
-    # TODO: run same playbook on different systems and system states
-    #  (strace)
-    for i in range(100):
-        task_args = {}
-        # exclusive_parameters = []
+    task_args = {}
 
-        for option in spec.options:
-            if option.mutually_exclusive_with:
-                if not option.required:
-                    logging.info(f"Mutually exclusive parameter {option.name} is not required")
-                    continue
-            try:
-                if option.type == 'list':
-                    task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
-                                                                             choices=option.choices,
-                                                                             element_type=option.element_type)
-                else:
-                    task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
-                                                                             choices=option.choices)
-            except Exception as e:
-                logging.error(e)
-                logging.error(option.name)
+    for option in spec.options:
+        if option.mutually_exclusive_with:
+            if not option.required:
+                logging.info(f"Mutually exclusive parameter {option.name} is not required")
+                continue
+        try:
+            if option.type == 'list':
+                task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
+                                                                         choices=option.choices,
+                                                                         element_type=option.element_type)
+            else:
+                task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
+                                                                         choices=option.choices)
+        except Exception as e:
+            logging.error(e)
+            logging.error(option.name)
 
-        tasks.append(Ansible_Task(f"{task_name} {i}", task_module, task_args))
+    return Ansible_Task(f"{task_name}", task_module, task_args)
 
-    return tasks
+
+def create_playbook(task: Ansible_Task, module_name: str, hosts: str, playbook_suffix: str = 'default'):
+    logging.info(f'Creating playbook for {module_name} on hosts: {hosts}')
+    playbook = Ansible_Playbook(f'Testing {module_name}_{playbook_suffix}', hosts, [task])
+    playbook_path = f'/root/fuzzed_playbooks/{module_name}_{playbook_suffix}.yaml'
+
+    logging.info(f'Writing playbook to {playbook_path}')
+    playbook.to_yaml(file_path=playbook_path)
 
 
 def main():
-    from doc_page_parser import generate_json
-    module_name = 'lineinfile'
-    generate_json(module_name)
-    t1 = create_task_from_spec_random(AnsibleModuleSpecification.from_json(f'json/{module_name}_specification.json'))
-    p1 = Ansible_Playbook('Playbook name', 'all', t1)
-    p1.to_yaml('trash/test.yaml')
+    parser = argparse.ArgumentParser(description='Fuzzer for Ansible parameters')
+    parser.add_argument('-s', '--specs_file', type=str, help='Path to the Ansible module specification JSON file')
+    parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module')
+    parser.add_argument('--hosts', type=str, help='Hosts to run the playbook on', default='all')
+    args = parser.parse_args()
+
+    logging.info(f'Generating random tasks for {args.specs_file}')
+
+    module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(args.specs_file)
+
+    logging.info(f'Creating default task for {args.module_name}')
+    default_task = create_task_from_spec_default(module_spec)
+
+    create_playbook(task=default_task, module_name=args.module_name, hosts=args.hosts, playbook_suffix='default')
+
+    logging.info(f'Creating {number_of_tasks} random tasks for {args.module_name}')
+    for i in range(number_of_tasks):
+        logging.info(f'Creating task {i} for {args.module_name}')
+        task = create_task_from_spec_random(module_spec)
+        create_playbook(task=task, module_name=args.module_name, hosts=args.hosts, playbook_suffix=f'{i}')
+
+    open('/root/specs/inverse_lock', 'w').close()
 
 
 if __name__ == '__main__':

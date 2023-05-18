@@ -1,42 +1,46 @@
+import signal
+from time import sleep
+
+import docker.models.containers
+
 from doc_page_parser import generate_json
 from docker_utilities import *
-from models import create_task_from_spec_default, AnsibleModuleSpecification, Ansible_Playbook
 
 
-def run_on_module(module_name: str):
+def run_on_module(module_name: str, cnc_machine: docker.models.containers.Container = None,
+                  containers: list[docker.models.containers.Container] = None):
     logging.info(f'Generating json specification for {module_name}')
+    generate_json(builtin_module_name=module_name, dest_dir='specs')
 
-    generate_json(module_name)
-    module_spec = AnsibleModuleSpecification.from_json(f'json/{module_name}_specification.json')
+    if len(containers) > 0:
+        logging.info("Generating random tasks")
+        specs_file_path = f'/root/specs/{module_name}_specification.json'
+        exec_run_wrapper(containers[0],
+                         f'python3 /root/specs/main_generator.py -s {specs_file_path} -m{module_name} --hosts all')
 
-    logging.info(f'Creating default task for {module_name}')
-    default_task = create_task_from_spec_default(module_spec)
+    signal_file = f'specs/inverse_lock'
+    while not os.path.exists(signal_file):
+        logging.info("Waiting for signal file")
+        sleep(1)
 
-    hosts = 'all'
-    logging.info(f'Creating playbook for {module_name}\n\ton hosts: {hosts}')
+    for playbook_name in os.listdir('ansible/fuzzed_playbooks'):
+        playbook_path = f'fuzzed_playbooks/{playbook_name}'
+        logging.info(f'Running playbook {playbook_path}')
+        # run_ansible_playbook(playbook_path=playbook_path)
 
-    playbook = Ansible_Playbook(f'Testing {module_name}', hosts, [default_task])
-    playbook_path = f'fuzzed_playbooks/{module_name}_default.yaml'
-
-    logging.info(f'Writing playbook to {playbook_path}')
-    playbook.to_yaml(file_path=f'ansible/{playbook_path}')
-
-    logging.info(f'Running playbook {playbook_path}')
-    run_ansible_playbook(playbook_path=playbook_path)
+    # reset_containers(containers)
+    os.remove(signal_file)
 
 
 def main():
     # Call create_containers function
+    signal.signal(signal.SIGINT, delete_containers_and_network)
+
     try:
         containers, cnc_machine = setup_infrastructure()
-        # playbook_path = 'test_playbook.yaml'
-
-        # run_ansible_playbook(playbook_path=playbook_path)
-        # reset_containers(containers)
 
         module_name = 'lineinfile'
-        run_on_module(module_name)
-        # reset_containers(containers)
+        run_on_module(module_name=module_name, cnc_machine=cnc_machine, containers=containers)
 
         # module_name = 'git'
         # run_on_module(module_name)
@@ -47,7 +51,7 @@ def main():
         logging.exception("Exception occurred. Cleaning up...")
         # TODO: Remove containers and network
 
-    delete_containers_and_network()
+        delete_containers_and_network()
 
 
 if __name__ == '__main__':
