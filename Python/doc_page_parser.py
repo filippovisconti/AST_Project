@@ -35,7 +35,7 @@ def get_attribute_specification(html):
     for attribute_class in cell:
         if ignore_header is False:
             specifications = extract_attribute_data(attribute_class)
-            if specifications['name'] not in ['others', 'validate', ' gid', 'group', 'user']:
+            if specifications['name'] not in ['others', 'validate']:
                 attribute_specifications.append(specifications)
         else:
             ignore_header = False
@@ -58,6 +58,15 @@ def extract_attribute_data(table_html):
 
     if data['type'] == 'any':
         data['type'] = 'mode'
+
+    if data['name'] == 'user' or data['name'] == 'seuser' or data['name'] == 'owner':
+        data['type'] = 'user'
+
+    if data['name'] == 'group':
+        data['type'] = 'group'
+
+    if data['name'] == 'gid':
+        data['type'] = 'gid'
 
     try:
         if table_html.select_one('.ansible-option-required').text is not None:

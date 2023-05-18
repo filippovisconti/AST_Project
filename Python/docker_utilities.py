@@ -166,14 +166,14 @@ def create_containers() -> list[docker.models.containers.Container]:
 
 
 def reset_containers(containers: list[docker.models.containers.Container]) -> None:
-    logging.info(f'Restarting containers...')
+    logging.info(f'Resetting containers...')
     for cont in containers:
         cont.restart()
         cont.exec_run('service ssh start')
         logging.info(f'Restarted container {cont.name}')
 
 
-def delete_containers_and_network():
+def delete_containers_and_network(signal=None, frame=None):
     # Remove containers
     for container in client.containers.list():
         # container.stop()
@@ -183,7 +183,7 @@ def delete_containers_and_network():
     # Remove network
     client.networks.get(network_name).remove()
     logging.info("Removed network")
-
+    os.remove('specs/inverse_lock')
     sys.exit(0)
 
 
@@ -195,7 +195,6 @@ def exec_run_wrapper(cnc: docker.models.containers.Container, command: str):
     else:
         logging.error(f"Command {command} failed - code {res.exit_code}")
         logging.error(res.output.decode('utf-8'))
-        raise RuntimeError('Failed')
 
     return res.exit_code
 

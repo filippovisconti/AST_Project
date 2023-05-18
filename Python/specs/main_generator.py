@@ -1,6 +1,9 @@
 import argparse
+import grp
 import json
 import logging
+import os
+import pwd
 import random
 from typing import List, Optional
 from typing import Union
@@ -25,21 +28,52 @@ def generate_random_array(element_type: str, min_length: int = 1, max_length: in
         raise ValueError(f"Unsupported element_type: {element_type}")
 
 
-def generate_random_parameter_value(parameter_type: str, choices: List = None, element_type: str = None) -> \
-        Union[str, int, float, bool, list]:
+def generate_random_parameter_value(parameter_type: str, choices: List = None, element_type: str = None) -> Union[
+    str, int, float, bool, list]:
     """Generates a random value of the specified parameter_type."""
     if parameter_type == "str" or parameter_type == "string":
         if choices:
             return random.choice(choices)
         else:
             return f"str_{random.randint(0, 100)}"
+    elif parameter_type == 'user':
+        user_list = pwd.getpwall()
+
+        if user_list:
+            random_user = random.choice(user_list)
+            return random_user.pw_name
+        else:
+            return 'root'
+    elif parameter_type == 'group':
+        group_list = grp.getgrall()
+
+        if group_list:
+            random_group = random.choice(group_list)
+            return random_group.gr_name
+        else:
+            return 'root'
+    elif parameter_type == 'gid':
+        group_list = grp.getgrall()
+
+        if group_list:
+            random_group = random.choice(group_list)
+            return random_group.gp_gid
+        else:
+            return '1'
+
     elif parameter_type == "path":
         if choices:
             return random.choice(choices)
         else:
-            dir = ["bin", "dev", "etc", "home", "lib", "mnt", "opt", "proc", "root", "sbin", "srv", "sys", "tmp", "usr",
-                   "var"]
-            return f"/{dir}/file_{random.randint(0, 100)}"
+            file_list = []
+            for root, dirs, files in os.walk('/'):
+                for file in files:
+                    file_list.append(os.path.join(root, file))
+
+            if file_list:
+                return random.choice(file_list)
+
+            return f"/tmp/file_{random.randint(0, 100)}"
 
     elif parameter_type == "mode":
         if choices:
@@ -97,19 +131,10 @@ class AnsibleModuleParameter:
         The reason for deprecating the parameter.
     """
 
-    def __init__(
-            self,
-            name: str,
-            type: str,
-            required: bool,
-            description: str,
-            mutually_exclusive_with: Optional[List[str]] = None,
-            default: Optional[str] = None,
-            choices: Optional[List] = None,
-            element_type: Optional[str] = None,
-            deprecated: bool = False,
-            deprecated_reason: Optional[str] = None,
-    ):
+    def __init__(self, name: str, type: str, required: bool, description: str,
+                 mutually_exclusive_with: Optional[List[str]] = None, default: Optional[str] = None,
+                 choices: Optional[List] = None, element_type: Optional[str] = None, deprecated: bool = False,
+                 deprecated_reason: Optional[str] = None, ):
         self.name = name
         self.type = type
         self.required = required
@@ -136,9 +161,7 @@ class AnsibleModuleSpecification:
         A list of parameters that the Ansible module accepts.
     """
 
-    def __init__(
-            self, module_name: str, description: str, options: List[AnsibleModuleParameter]
-    ):
+    def __init__(self, module_name: str, description: str, options: List[AnsibleModuleParameter]):
         self.module_name = module_name
         self.description = description
         self.options = options
@@ -164,18 +187,12 @@ class AnsibleModuleSpecification:
         description = data["description"]
         options = []
         for option in data["options"]:
-            parameter = AnsibleModuleParameter(
-                name=option["name"],
-                type=option["type"],
-                required=option["required"],
-                description=option["description"],
-                mutually_exclusive_with=option.get("mutually_exclusive_with"),
-                default=option.get("default"),
-                choices=option.get("choices"),
-                element_type=option.get("element_type"),
-                deprecated=option["deprecated"],
-                deprecated_reason=option.get("deprecated_reason"),
-            )
+            parameter = AnsibleModuleParameter(name=option["name"], type=option["type"], required=option["required"],
+                                               description=option["description"],
+                                               mutually_exclusive_with=option.get("mutually_exclusive_with"),
+                                               default=option.get("default"), choices=option.get("choices"),
+                                               element_type=option.get("element_type"), deprecated=option["deprecated"],
+                                               deprecated_reason=option.get("deprecated_reason"), )
             options.append(parameter)
         return cls(module_name, description, options)
 
@@ -195,11 +212,9 @@ class Ansible_Task:
         part += f'  {self.task_module}:\n'
 
         for key, value in self.task_args.items():
-            if (type(value) != str or key == "path" or key == "owner"
-                    or key == "group" or key == "state" or key == "validate"
-                    or (key == "line" and
-                        ('192' in value or '127' in value or 'SELINUX' in value
-                         or 'Listen' in value))):
+            if (type(
+                    value) != str or key == "path" or key == "owner" or key == "group" or key == "state" or key == "validate" or (
+                    key == "line" and ('192' in value or '127' in value or 'SELINUX' in value or 'Listen' in value))):
                 part += f"    {key}: {value}\n"
             elif key == "regexp" or key == "line":
                 part += f"    {key}: '{value}'\n"
@@ -231,9 +246,7 @@ class Ansible_Playbook:
         self.tasks: list[Ansible_Task] = tasks
 
     def to_yaml(self, file_path):
-        playbook_dict = {"- name": self.playbook_name,
-                         "  hosts": self.hosts,
-                         "    ": self.tasks}
+        playbook_dict = {"- name": self.playbook_name, "  hosts": self.hosts, "    ": self.tasks}
         with open(file_path, 'w') as f:
             f.write("- name: " + self.playbook_name + "\n")
             f.write("  hosts: " + self.hosts + "\n")
