@@ -358,8 +358,6 @@ def create_task_from_combi_random(spec: AnsibleModuleSpecification, parameters: 
     for parameter in parameters:
         for option in spec.options:
             if option.name == parameter:
-                print(option.name)
-                print(option.type)
                 try:
                     if option.type == 'list':
                         task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
@@ -410,8 +408,9 @@ def get_random_parameter_options(spec: AnsibleModuleSpecification) -> list:
         unique_parameters.extend(random_optional_parameters)
         unique_parameters = remove_mutually_exclusive_parameters(spec, unique_parameters)
 
-        if unique_parameters not in unique_combinations:
-            unique_combinations.append(unique_parameters)
+        for unique_parameter_combi in unique_parameters:
+            if unique_parameter_combi not in unique_combinations and len(unique_combinations) < number_of_combinations:
+                unique_combinations.append(unique_parameter_combi)
 
     return unique_combinations
 
@@ -428,15 +427,17 @@ def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, uniqu
            list: The updated list of unique parameters after removing mutually exclusive parameters.
 
        """
-    # TODO: save all the unique parameters
+    unique_parameter_list = []
     for parameter in unique_parameters:
         for option in spec.options:
             if option.name == parameter and option.mutually_exclusive_with:
                 mutually_exclusive_parameters = [option.mutually_exclusive_with]
-                unique_parameters = [param for param in unique_parameters if
+                unique_parameter_combination = [param for param in unique_parameters if
                                      param not in sum(mutually_exclusive_parameters, [])]
+                unique_parameter_list.append(unique_parameter_combination)
                 break
-    return unique_parameters
+
+    return unique_parameter_list
 
 
 def main():
@@ -470,9 +471,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json('lineinfile_specification.json')
-    parameter_combinations = get_random_parameter_options(module_spec)
-    for combination in parameter_combinations:
-        print(combination)
-        task = create_task_from_combi_random(module_spec, combination)
-        print(task)
