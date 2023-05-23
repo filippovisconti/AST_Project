@@ -371,14 +371,12 @@ def main():
     open('/root/specs/inverse_lock', 'w').close()
 
 
-# TODO unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required +
-#  picked choice of random parameters -> exclude mutually exclusive parameters
+# TODO get the first 100 unique combinations
 def get_random_parameters_options() -> list:
     filepath = 'lineinfile_specification.json'
     module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(filepath)
     required_parameters = []
     optional_parameters = []
-    unique_parameters = []
 
     for option in module_spec.options:
         if option.required:
@@ -386,30 +384,31 @@ def get_random_parameters_options() -> list:
         else:
             optional_parameters.append(option.name)
 
-    unique_parameters.extend(required_parameters)
-    num_optional_parameters = random.randint(0, len(optional_parameters))
-    random_optional_parameters = random.sample(optional_parameters, num_optional_parameters)
-    unique_parameters.extend(random_optional_parameters)
+    unique_combinations = []
+    while len(unique_combinations) < 100:
+        unique_parameters = []
+        unique_parameters.extend(required_parameters)
+        num_optional_parameters = random.randint(0, len(optional_parameters))
+        random_optional_parameters = random.sample(optional_parameters, num_optional_parameters)
+        unique_parameters.extend(random_optional_parameters)
+        unique_parameters = remove_mutually_exclusive_parameters(module_spec, unique_parameters)
 
-    print(unique_parameters)
-    unique_parameters = remove_mutually_exclusive_parameters(module_spec, unique_parameters)
-    print("FINAL")
-    print(unique_parameters)
-    return unique_parameters
+        if unique_parameters not in unique_combinations:
+            unique_combinations.append(unique_parameters)
+
+    print("combinations")
+
+
+    return unique_combinations
 
 
 def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, unique_parameters: list) -> list:
-    mutually_exclusive_parameters = []
     for parameter in unique_parameters:
         for option in spec.options:
             if option.name == parameter and option.mutually_exclusive_with:
-                print(parameter)
-                mutually_exclusive_parameters.append(option.mutually_exclusive_with)
-                print(mutually_exclusive_parameters)
+                mutually_exclusive_parameters = [option.mutually_exclusive_with]
                 unique_parameters = [param for param in unique_parameters if
                                      param not in sum(mutually_exclusive_parameters, [])]
-                mutually_exclusive_parameters.remove(option.mutually_exclusive_with)
-                print(unique_parameters)
                 break
     return unique_parameters
 
