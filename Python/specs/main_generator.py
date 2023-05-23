@@ -346,7 +346,8 @@ def create_playbook(task: Ansible_Task, module_name: str, hosts: str, playbook_s
     playbook.to_yaml(file_path=playbook_path)
 
 
-def get_random_parameter_options() -> list:
+# TODO: connect it correctly to the other function and get random values
+def get_random_parameter_options(spec: AnsibleModuleSpecification) -> list:
     """
         Generates a list of unique parameter combinations for a module based on a specification file.
 
@@ -354,13 +355,10 @@ def get_random_parameter_options() -> list:
             list: A list of unique parameter combinations.
 
         """
-    # TODO: connect it correctly to the other function and get random values
-    filepath = 'lineinfile_specification.json'
-    module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(filepath)
     required_parameters = []
     optional_parameters = []
 
-    for option in module_spec.options:
+    for option in spec.options:
         if option.required:
             required_parameters.append(option.name)
         else:
@@ -373,7 +371,7 @@ def get_random_parameter_options() -> list:
         num_optional_parameters = random.randint(0, len(optional_parameters))
         random_optional_parameters = random.sample(optional_parameters, num_optional_parameters)
         unique_parameters.extend(random_optional_parameters)
-        unique_parameters = remove_mutually_exclusive_parameters(module_spec, unique_parameters)
+        unique_parameters = remove_mutually_exclusive_parameters(spec, unique_parameters)
 
         if unique_parameters not in unique_combinations:
             unique_combinations.append(unique_parameters)
