@@ -176,14 +176,18 @@ def reset_containers(containers: list[docker.models.containers.Container]) -> No
 def delete_containers_and_network(signal=None, frame=None):
     # Remove containers
     for container in client.containers.list():
-        # container.stop()
+        container.stop()
         container.remove(force=True)
+
         logging.info(f"Removed container {container.name}")
 
     # Remove network
     client.networks.get(network_name).remove()
     logging.info("Removed network")
-    os.remove('specs/inverse_lock')
+    try:
+        os.remove('specs/inverse_lock')
+    except FileNotFoundError:
+        pass
     sys.exit(0)
 
 
@@ -199,19 +203,18 @@ def exec_run_wrapper(cnc: docker.models.containers.Container, command: str):
     return res.exit_code
 
 
-def run_ansible_playbook(playbook_path: str) -> int:
+def run_ansible_playbook(playbook_path: str, cnc: docker.models.containers.Container) -> int:
     logging.info("Running Ansible playbook...")
-    cnc = client.containers.get('cnc_machine')
 
     syntax_check = f'ansible-playbook --syntax-check  -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
-    actual_run = f'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
-    res = exec_run_wrapper(cnc, syntax_check)
-    if res != 0:
+    ret_code = exec_run_wrapper(cnc, syntax_check)
+    if ret_code != 0:
         logging.error(f"FAILED SYNTAX CHECK. ABORTING...")
-        return res
+        return ret_code
     else:
         logging.info(f"SYNTAX CHECK OK. RUNNING PLAYBOOK...")
 
+    actual_run = f'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
     return exec_run_wrapper(cnc, actual_run)
 
 
@@ -226,4 +229,5 @@ def setup_infrastructure():
 
 
 if __name__ == '__main__':
-    pass
+    print("This file is not meant to be run directly.")
+    print("Please run the main.py file instead.")

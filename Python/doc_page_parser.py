@@ -59,14 +59,21 @@ def extract_attribute_data(table_html):
     if data['type'] == 'any':
         data['type'] = 'mode'
 
-    if data['name'] == 'user' or data['name'] == 'seuser' or data['name'] == 'owner':
+    elif data['name'] == 'user' or data['name'] == 'seuser' or data['name'] == 'owner':
         data['type'] = 'user'
 
-    if data['name'] == 'group':
+    elif data['name'] == 'group':
         data['type'] = 'group'
 
-    if data['name'] == 'gid':
+    elif data['name'] == 'gid':
         data['type'] = 'gid'
+
+    if data['type'] == 'list':
+        if data['name'] == 'name':
+            data['element_type'] = 'name'
+        else:
+            data['element_type'] = 'str'
+
 
     try:
         if table_html.select_one('.ansible-option-required').text is not None:
@@ -91,6 +98,8 @@ def extract_attribute_data(table_html):
     try:
         tmp = table_html.find(class_='ansible-option-default-bold').text.strip()
         data['default'] = tmp.split(' ')[0]
+        if data['default'] == 'Default:':
+            raise AttributeError
     except:
         data['default'] = None
 
@@ -132,7 +141,7 @@ def fix_name(name):
     return name.split('.')[-1].split(' ')[0]
 
 
-def generate_json(builtin_module_name: str, dest_dir: str = 'specs') -> None:
+def generate_json(builtin_module_name: str = None, dest_dir: str = 'specs') -> None:
     url = f"https://docs.ansible.com/ansible/latest/collections/ansible/builtin/{builtin_module_name}_module.html"
 
     html = get_html_of_url(url)
@@ -145,4 +154,7 @@ def generate_json(builtin_module_name: str, dest_dir: str = 'specs') -> None:
 
 
 if __name__ == "__main__":
-    generate_json()
+    print("This file is not meant to be run directly.")
+    print("Please run the main.py file instead.")
+    generate_json('apt', dest_dir='trash')
+
