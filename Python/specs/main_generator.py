@@ -5,10 +5,11 @@ import logging
 import os
 import pwd
 import random
+import string
 from typing import List, Optional
 from typing import Union
 
-logging.basicConfig(filename='/root/specs/specs_fuzzer.log', level=logging.INFO)
+# logging.basicConfig(filename='/root/specs/specs_fuzzer.log', level=logging.INFO)
 
 number_of_tasks = 10
 
@@ -277,7 +278,6 @@ def create_task_from_spec_default(spec: AnsibleModuleSpecification) -> Ansible_T
     task_args = {}
     for option in spec.options:
         # if option.required:
-        # if mutually_exclusive_with:
         if option.mutually_exclusive_with:
             if not option.required:
                 logging.info(f"Mutually exclusive parameter {option.name} is not required")
@@ -371,5 +371,27 @@ def main():
     open('/root/specs/inverse_lock', 'w').close()
 
 
+# TODO unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required +
+#  picked choice of random parameters -> exclude mutually exclusive parameters
+def get_random_parameters_options() -> list:
+    filepath = 'lineinfile_specification.json'
+    module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(filepath)
+    required_parameters = []
+    optional_parameters = []
+    unique_parameters = []
+    for option in module_spec.options:
+        if option.required:
+            required_parameters.append(option.name)
+        else:
+            optional_parameters.append(option.name)
+    unique_parameters.extend(required_parameters)
+
+    num_optional_parameters = random.randint(0, len(optional_parameters))
+    random_optional_parameters = random.sample(optional_parameters, num_optional_parameters)
+    unique_parameters.extend(random_optional_parameters)
+    return unique_parameters
+
+
 if __name__ == '__main__':
     main()
+    # get_random_parameters_options()
