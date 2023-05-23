@@ -9,7 +9,7 @@ TODO
 [ ] Clean up code after each task
 
 NEXT STEPS:
-[ ] unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required + picked choice of random parameters -> exclude mutually exclusive parameters
+[x] unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required + picked choice of random parameters -> exclude mutually exclusive parameters
 [ ] exercise more modules to see if there are any limitations
 [ ] get system state inside generators
 [ ] run same playbook on different systems and system states

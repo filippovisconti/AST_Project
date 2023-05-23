@@ -346,31 +346,6 @@ def create_playbook(task: Ansible_Task, module_name: str, hosts: str, playbook_s
     playbook.to_yaml(file_path=playbook_path)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Fuzzer for Ansible parameters')
-    parser.add_argument('-s', '--specs_file', type=str, help='Path to the Ansible module specification JSON file')
-    parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module')
-    parser.add_argument('--hosts', type=str, help='Hosts to run the playbook on', default='all')
-    args = parser.parse_args()
-
-    logging.info(f'Generating random tasks for {args.specs_file}')
-
-    module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(args.specs_file)
-
-    logging.info(f'Creating default task for {args.module_name}')
-    default_task = create_task_from_spec_default(module_spec)
-
-    create_playbook(task=default_task, module_name=args.module_name, hosts=args.hosts, playbook_suffix='default')
-
-    logging.info(f'Creating {number_of_tasks} random tasks for {args.module_name}')
-    for i in range(number_of_tasks):
-        logging.info(f'Creating task {i} for {args.module_name}')
-        task = create_task_from_spec_random(module_spec)
-        create_playbook(task=task, module_name=args.module_name, hosts=args.hosts, playbook_suffix=f'{i}')
-
-    open('/root/specs/inverse_lock', 'w').close()
-
-
 def get_random_parameter_options() -> list:
     """
         Generates a list of unique parameter combinations for a module based on a specification file.
@@ -402,6 +377,7 @@ def get_random_parameter_options() -> list:
 
         if unique_parameters not in unique_combinations:
             unique_combinations.append(unique_parameters)
+
     return unique_combinations
 
 
@@ -427,6 +403,31 @@ def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, uniqu
     return unique_parameters
 
 
+def main():
+    parser = argparse.ArgumentParser(description='Fuzzer for Ansible parameters')
+    parser.add_argument('-s', '--specs_file', type=str, help='Path to the Ansible module specification JSON file')
+    parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module')
+    parser.add_argument('--hosts', type=str, help='Hosts to run the playbook on', default='all')
+    args = parser.parse_args()
+
+    logging.info(f'Generating random tasks for {args.specs_file}')
+
+    module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(args.specs_file)
+
+    logging.info(f'Creating default task for {args.module_name}')
+    default_task = create_task_from_spec_default(module_spec)
+
+    create_playbook(task=default_task, module_name=args.module_name, hosts=args.hosts, playbook_suffix='default')
+
+    logging.info(f'Creating {number_of_tasks} random tasks for {args.module_name}')
+    for i in range(number_of_tasks):
+        logging.info(f'Creating task {i} for {args.module_name}')
+        task = create_task_from_spec_random(module_spec)
+        create_playbook(task=task, module_name=args.module_name, hosts=args.hosts, playbook_suffix=f'{i}')
+
+    open('/root/specs/inverse_lock', 'w').close()
+
+
 if __name__ == '__main__':
-    # main()
-    get_random_parameter_options()
+    main()
+    # get_random_parameter_options()
