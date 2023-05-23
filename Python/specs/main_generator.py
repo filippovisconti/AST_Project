@@ -371,8 +371,15 @@ def main():
     open('/root/specs/inverse_lock', 'w').close()
 
 
-# TODO get the first 100 unique combinations
-def get_random_parameters_options() -> list:
+def get_random_parameter_options() -> list:
+    """
+        Generates a list of unique parameter combinations for a module based on a specification file.
+
+        Returns:
+            list: A list of unique parameter combinations.
+
+        """
+    # TODO: connect it correctly to the other function and get random values
     filepath = 'lineinfile_specification.json'
     module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(filepath)
     required_parameters = []
@@ -395,14 +402,21 @@ def get_random_parameters_options() -> list:
 
         if unique_parameters not in unique_combinations:
             unique_combinations.append(unique_parameters)
-
-    print("combinations")
-
-
     return unique_combinations
 
 
 def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, unique_parameters: list) -> list:
+    """
+       Removes mutually exclusive parameters from a list of unique parameters.
+
+       Args:
+           spec (AnsibleModuleSpecification): The specification object containing options information.
+           unique_parameters (list): The list of unique parameters to remove mutually exclusive parameters from.
+
+       Returns:
+           list: The updated list of unique parameters after removing mutually exclusive parameters.
+
+       """
     for parameter in unique_parameters:
         for option in spec.options:
             if option.name == parameter and option.mutually_exclusive_with:
@@ -415,4 +429,4 @@ def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, uniqu
 
 if __name__ == '__main__':
     # main()
-    get_random_parameters_options()
+    get_random_parameter_options()
