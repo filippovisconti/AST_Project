@@ -433,7 +433,7 @@ def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, uniqu
             if option.name == parameter and option.mutually_exclusive_with:
                 mutually_exclusive_parameters = [option.mutually_exclusive_with]
                 unique_parameter_combination = [param for param in unique_parameters if
-                                     param not in sum(mutually_exclusive_parameters, [])]
+                                                param not in sum(mutually_exclusive_parameters, [])]
                 unique_parameter_list.append(unique_parameter_combination)
                 break
 
