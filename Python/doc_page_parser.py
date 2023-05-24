@@ -35,7 +35,8 @@ def get_attribute_specification(html):
     for attribute_class in cell:
         if ignore_header is False:
             specifications = extract_attribute_data(attribute_class)
-            if specifications['name'] not in ['others', 'validate']:
+            exclude_list = ['others', 'validate', 'content', 'decrypt', 'checksum']
+            if specifications['name'] not in exclude_list:
                 attribute_specifications.append(specifications)
         else:
             ignore_header = False
@@ -74,7 +75,6 @@ def extract_attribute_data(table_html):
         else:
             data['element_type'] = 'str'
 
-
     try:
         if table_html.select_one('.ansible-option-required').text is not None:
             data['required'] = True
@@ -105,9 +105,11 @@ def extract_attribute_data(table_html):
 
     try:
         description = div_class[-1].text.replace('\n', ' ').replace('\\', ' ')
-        keyword1 = "Mutually exclusive with"
-        keyword2 = "May not be used with"
-        if keyword1 or keyword2 in description:
+        keyword1: str = "Mutually exclusive with"
+        keyword2: str = "May not be used with"
+        keyword3: str = "used instead of"
+
+        if keyword1 in description or keyword2 in description or keyword3 in description:
             values = []
             lines = description.split('\n')
             for line in lines:
@@ -119,6 +121,11 @@ def extract_attribute_data(table_html):
                     value = line.split(keyword2)[1].split('.')[0].strip().split(' or ')
                     for v in value:
                         values.append(v)
+                '''
+                if keyword3 in line:
+                    value = line.split(keyword3)[1].strip().split(',')[0]
+                    values.append(value)
+                '''
             if values:
                 logging.info(f"Mutually exclusive with values: {values}")
             data['mutually_exclusive_with'] = values
@@ -127,7 +134,6 @@ def extract_attribute_data(table_html):
     except:
         data['mutually_exclusive_with'] = []
 
-    # TODO  "deprecated": false or true
     data['deprecated'] = False
     return data
 
@@ -156,5 +162,4 @@ def generate_json(builtin_module_name: str = None, dest_dir: str = 'specs') -> N
 if __name__ == "__main__":
     print("This file is not meant to be run directly.")
     print("Please run the main.py file instead.")
-    generate_json('apt', dest_dir='trash')
-
+    generate_json('copy', dest_dir='specs')

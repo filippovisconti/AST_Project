@@ -438,7 +438,7 @@ def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, uniqu
     mut_excl_dict = {}
 
     for option in spec.options:
-        print(option.mutually_exclusive_with)
+        # print(option.mutually_exclusive_with)
         if option.mutually_exclusive_with:
             mut_excl_dict[option.name] = option.mutually_exclusive_with
 
@@ -489,10 +489,10 @@ def main():
 
 
 if __name__ == '__main__':
-    '''
     main()
     '''
     specs: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json('apt_specification.json')
     par_combinations = get_random_parameter_options(specs, 10)
     print(par_combinations)
     pass
+    '''
