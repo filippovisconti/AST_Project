@@ -1,6 +1,8 @@
 TODO
 
 [ ] "deprecated": false or true
+[ ] “required” field as well, even though it’s not tagged as “required” in the usual way
+    https://docs.ansible.com/ansible/latest/collections/ansible/builtin/service_module.html
 [ ] Decide generic specification format
 	- Check if parameters are mutually exclusive
 [ ] Create generator for every file type (paths, boolean) and design mutation strategies - mutate system state and configuration -> keep it simple
