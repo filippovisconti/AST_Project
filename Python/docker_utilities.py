@@ -165,18 +165,17 @@ def create_containers() -> list[docker.models.containers.Container]:
     return containers
 
 
-def reset_containers(containers: list[docker.models.containers.Container]) -> None:
+def reset_containers(containers: list[docker.models.containers.Container]) -> list[docker.models.containers.Container]:
     logging.info(f'Resetting containers...')
     for cont in containers:
-        cont.restart()
-        cont.exec_run('service ssh start')
-        logging.info(f'Restarted container {cont.name}')
+        cont.remove(force=True)
+        logging.info(f'Removed container {cont.name}')
+    return create_containers()
 
 
 def delete_containers_and_network(signal=None, frame=None):
     # Remove containers
     for container in client.containers.list():
-        container.stop()
         container.remove(force=True)
 
         logging.info(f"Removed container {container.name}")

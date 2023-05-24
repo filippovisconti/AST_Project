@@ -3,7 +3,7 @@ NUM_TESTS=3
 
 all: run
 
-run:
+run: clean
 	python3 ./main.py -m $(MODULENAME) -n $(NUM_TESTS)
 
 clean:

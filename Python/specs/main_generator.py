@@ -6,12 +6,12 @@ import os
 import pwd
 import random
 from typing import List, Optional
-from typing import Union
 
-logging.basicConfig(filename='/root/specs/specs_fuzzer.log', level=logging.INFO)
 
-number_of_tasks = 10
-number_of_combinations = 10
+# logging.basicConfig(filename='/root/specs/specs_fuzzer.log', level=logging.INFO)
+
+# number_of_tasks = 10
+# number_of_combinations = 10
 
 
 def generate_random_array(element_type: str, min_length: int = 1, max_length: int = 10) -> List:
@@ -19,18 +19,20 @@ def generate_random_array(element_type: str, min_length: int = 1, max_length: in
     length = random.randint(min_length, max_length)
     if element_type == "str":
         return [str(random.randint(0, 100)) for _ in range(length)]
-    elif element_type == "int":
-        return [random.randint(0, 100) for _ in range(length)]
+    elif element_type == "name":
+        list_of_names = ['htop', 'git', 'net-tools', 'sudo', 'nvim', 'nano', 'lsof']
+        return random.sample(list_of_names, 2)
+    elif element_type == "int" or element_type == "number" or element_type == "integer":
+        return [random.randint(1, 100) for _ in range(length)]
     elif element_type == "float":
-        return [random.uniform(0.0, 100.0) for _ in range(length)]
+        return [random.uniform(0.1, 100.0) for _ in range(length)]
     elif element_type == "bool":
         return [random.choice([True, False]) for _ in range(length)]
     else:
         raise ValueError(f"Unsupported element_type: {element_type}")
 
 
-def generate_random_parameter_value(parameter_type: str, choices: List = None, element_type: str = None) -> Union[
-    str, int, float, bool, list]:
+def generate_random_parameter_value(parameter_type: str, choices: List = None, element_type: str = None):
     """Generates a random value of the specified parameter_type."""
     if parameter_type == "str" or parameter_type == "string":
         if choices:
@@ -81,7 +83,7 @@ def generate_random_parameter_value(parameter_type: str, choices: List = None, e
             return random.choice(choices)
         else:
             return "0644"
-    elif parameter_type == "int" or parameter_type == "number":
+    elif parameter_type == "int" or parameter_type == "number" or parameter_type == "integer":
         if choices:
             return random.choice(choices)
         else:
@@ -90,7 +92,7 @@ def generate_random_parameter_value(parameter_type: str, choices: List = None, e
         if choices:
             return random.choice(choices)
         else:
-            return random.uniform(0.0, 100.0)
+            return random.uniform(0.1, 100.0)
     elif parameter_type == "bool" or parameter_type == "boolean":
         return random.choice([True, False])
     elif parameter_type == "list":
@@ -323,13 +325,10 @@ def create_task_from_spec_random(spec: AnsibleModuleSpecification) -> Ansible_Ta
                 logging.info(f"Mutually exclusive parameter {option.name} is not required")
                 continue
         try:
-            if option.type == 'list':
-                task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
-                                                                         choices=option.choices,
-                                                                         element_type=option.element_type)
-            else:
-                task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
-                                                                         choices=option.choices)
+            task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
+                                                                     choices=option.choices,
+                                                                     element_type=option.element_type)
+
         except Exception as e:
             logging.error(e)
             logging.error(option.name)
@@ -345,6 +344,8 @@ def create_task_from_combi_random(spec: AnsibleModuleSpecification, parameters: 
     ----------
     spec : AnsibleModuleSpecification
         The AnsibleModuleSpecification to create the Ansible_Task from.
+    parameters : list
+        The list of parameters to use for the Ansible_Task.
 
     Returns
     -------
@@ -359,13 +360,11 @@ def create_task_from_combi_random(spec: AnsibleModuleSpecification, parameters: 
         for option in spec.options:
             if option.name == parameter:
                 try:
-                    if option.type == 'list':
-                        task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
-                                                                                 choices=option.choices,
-                                                                                 element_type=option.element_type)
-                    else:
-                        task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
-                                                                                 choices=option.choices)
+
+                    task_args[option.name] = generate_random_parameter_value(parameter_type=option.type,
+                                                                             choices=option.choices,
+                                                                             element_type=option.element_type)
+
                 except Exception as e:
                     logging.error(e)
                     logging.error(option.name)
@@ -382,14 +381,14 @@ def create_playbook(task: Ansible_Task, module_name: str, hosts: str, playbook_s
     playbook.to_yaml(file_path=playbook_path)
 
 
-def get_random_parameter_options(spec: AnsibleModuleSpecification) -> list:
+def get_random_parameter_options(spec: AnsibleModuleSpecification, num_tests: int) -> list[list[str]]:
     """
         Generates a list of unique parameter combinations for a module based on a specification file.
 
         Returns:
             list: A list of unique parameter combinations.
 
-        """
+    """
     required_parameters = []
     optional_parameters = []
 
@@ -398,20 +397,28 @@ def get_random_parameter_options(spec: AnsibleModuleSpecification) -> list:
             required_parameters.append(option.name)
         else:
             optional_parameters.append(option.name)
+    '''
+    print("req", required_parameters)
+    print("opt", optional_parameters)
+    '''
 
     unique_combinations = []
-    while len(unique_combinations) < number_of_combinations:
-        unique_parameters = []
-        unique_parameters.extend(required_parameters)
-        num_optional_parameters = random.randint(0, len(optional_parameters))
-        random_optional_parameters = random.sample(optional_parameters, num_optional_parameters)
-        unique_parameters.extend(random_optional_parameters)
-        unique_parameters = remove_mutually_exclusive_parameters(spec, unique_parameters)
+    len_optional_parameters = len(optional_parameters)
+    min_len = len_optional_parameters // 2
 
-        for unique_parameter_combi in unique_parameters:
-            if unique_parameter_combi not in unique_combinations and len(unique_combinations) < number_of_combinations:
-                unique_combinations.append(unique_parameter_combi)
+    while len(unique_combinations) < num_tests:
 
+        num_optional_parameters = random.randint(min_len, len_optional_parameters)
+        random_combination = random.sample(optional_parameters, num_optional_parameters)
+        # print("rand", random_combination)
+        random_combination = remove_mutually_exclusive_parameters(spec, random_combination)
+        # print("clean", random_combination)
+
+        random_combination.extend(required_parameters)
+        if random_combination not in unique_combinations and len(unique_combinations) < num_tests:
+            unique_combinations.append(random_combination)
+
+    # print("final", unique_combinations)
     return unique_combinations
 
 
@@ -428,22 +435,33 @@ def remove_mutually_exclusive_parameters(spec: AnsibleModuleSpecification, uniqu
 
        """
     unique_parameter_list = []
-    for parameter in unique_parameters:
-        for option in spec.options:
-            if option.name == parameter and option.mutually_exclusive_with:
-                mutually_exclusive_parameters = [option.mutually_exclusive_with]
-                unique_parameter_combination = [param for param in unique_parameters if
-                                                param not in sum(mutually_exclusive_parameters, [])]
-                unique_parameter_list.append(unique_parameter_combination)
-                break
+    mut_excl_dict = {}
 
-    return unique_parameter_list
+    for option in spec.options:
+        print(option.mutually_exclusive_with)
+        if option.mutually_exclusive_with:
+            mut_excl_dict[option.name] = option.mutually_exclusive_with
+
+    for parameter in unique_parameters:
+
+        if parameter in mut_excl_dict:
+
+            for p in mut_excl_dict[parameter].copy():
+                try:
+                    mut_excl_dict[parameter].remove(p)
+                    print("removed", p)
+                except ValueError:
+                    print("not removed", p)
+                    continue
+
+    return unique_parameters
 
 
 def main():
     parser = argparse.ArgumentParser(description='Fuzzer for Ansible parameters')
     parser.add_argument('-s', '--specs_file', type=str, help='Path to the Ansible module specification JSON file')
     parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module')
+    parser.add_argument('-n', '--num_tests', type=int, help='Number of fuzzed playbooks to generate', default='15')
     parser.add_argument('--hosts', type=str, help='Hosts to run the playbook on', default='all')
     args = parser.parse_args()
 
@@ -456,18 +474,25 @@ def main():
 
     create_playbook(task=default_task, module_name=args.module_name, hosts=args.hosts, playbook_suffix='default')
 
-    logging.info(f'Creating {number_of_tasks} random tasks for {args.module_name}')
-    for i in range(number_of_tasks):
-        logging.info(f'Creating task {i} for {args.module_name}')
-        task = create_task_from_spec_random(module_spec)
-        create_playbook(task=task, module_name=args.module_name, hosts=args.hosts, playbook_suffix=f'{i}')
+    logging.info(f'Creating random combinations for {args.module_name}')
+    parameter_combinations = get_random_parameter_options(module_spec, args.num_tests)
 
-    parameter_combinations = get_random_parameter_options(module_spec)
+    i = 0
+    logging.info(f'Creating {args.num_tests} random tasks for {args.module_name}')
     for combination in parameter_combinations:
         task = create_task_from_combi_random(module_spec, combination)
-        # TODO create playback?
+        create_playbook(task=task, module_name=args.module_name, hosts=args.hosts, playbook_suffix=f'{i}')
+        logging.info(f'Created task {i} for {args.module_name}')
+        i += 1
+
     open('/root/specs/inverse_lock', 'w').close()
 
 
 if __name__ == '__main__':
+    '''
     main()
+    '''
+    specs: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json('apt_specification.json')
+    par_combinations = get_random_parameter_options(specs, 10)
+    print(par_combinations)
+    pass

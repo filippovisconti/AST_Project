@@ -1,3 +1,4 @@
+import argparse
 import signal
 from time import sleep
 
@@ -6,30 +7,49 @@ import docker.models.containers
 from doc_page_parser import generate_json
 from docker_utilities import *
 
+signal_file = f'specs/inverse_lock'
 
-def run_on_module(module_name: str, cnc_machine: docker.models.containers.Container = None,
-                  containers: list[docker.models.containers.Container] = None):
-    logging.info(f'Generating json specification for {module_name}')
-    generate_json(builtin_module_name=module_name, dest_dir='specs')
 
-    if len(containers) > 0:
+def generate_playbooks(module_name: str, containers: list[docker.models.containers.Container], num_tests: int) -> None:
+    if len(containers) > 0 and containers:
         logging.info("Generating random tasks")
         specs_file_path = f'/root/specs/{module_name}_specification.json'
-        exec_run_wrapper(containers[0],
-                         f'python3 /root/specs/main_generator.py -s {specs_file_path} -m{module_name} --hosts all')
+        command = f'python3 /root/specs/main_generator.py -s {specs_file_path}' \
+                  f' -m {module_name} -n {num_tests} --hosts all'
 
-    signal_file = f'specs/inverse_lock'
+        exec_run_wrapper(containers[0], command)
+
+
+def try_lock():
     while not os.path.exists(signal_file):
         logging.info("Waiting for signal file")
         sleep(1)
     logging.info(f"Signal file found({os.path.exists(signal_file)}). Running playbook...")
+
+
+def free_lock():
+    try:
+        os.remove(signal_file)
+    except FileNotFoundError:
+        pass
+
+
+def run_on_module(module_name: str, cnc_machine: docker.models.containers.Container = None,
+                  containers: list[docker.models.containers.Container] = None, num_tests: int = 15):
+    logging.info(f'Generating json specification for {module_name}')
+    generate_json(builtin_module_name=module_name, dest_dir='specs')
+
+    generate_playbooks(module_name=module_name, containers=containers, num_tests=num_tests)
+
+    try_lock()
 
     results = {}
     for playbook_name in os.listdir('ansible/fuzzed_playbooks'):
         playbook_path = f'fuzzed_playbooks/{playbook_name}'
         logging.info(f'Running playbook {playbook_path}')
 
-        exit_code = run_ansible_playbook(playbook_path=playbook_path)
+        exit_code = run_ansible_playbook(playbook_path=playbook_path, cnc=cnc_machine)
+
         if exit_code in results:
             results[exit_code] += 1
         else:
@@ -37,35 +57,42 @@ def run_on_module(module_name: str, cnc_machine: docker.models.containers.Contai
 
         logging.info(f"Playbook {playbook_path} finished with exit code {exit_code}")
 
-        reset_containers(containers)
+        containers = reset_containers(containers)
 
-    os.remove(signal_file)
+    free_lock()
 
     return results
+
+
+def print_results(results: dict):
+    for key, value in results.items():
+        print(f"Return value: {key}, Count: {value}")
 
 
 def main():
     # Call create_containers function
     signal.signal(signal.SIGINT, delete_containers_and_network)
 
+    parser = argparse.ArgumentParser(description='Fuzzer for Ansible modules')
+    parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module', default='lineinfile')
+    parser.add_argument('-n', '--num_tests', type=int, help='Number of fuzzed playbooks to generate', default='15')
+    args = parser.parse_args()
+    logging.info(f"Running fuzzer with parameters {args}")
     try:
         containers, cnc_machine = setup_infrastructure()
+        module_name = args.module_name
 
-        module_name = 'lineinfile'
-        res = run_on_module(module_name=module_name, cnc_machine=cnc_machine, containers=containers)
-        for key, value in res.items():
-            print(f"Return value: {key}, Count: {value}")
+        results = run_on_module(module_name=module_name, cnc_machine=cnc_machine, containers=containers,
+                                num_tests=args.num_tests)
 
-        # module_name = 'git'
-        # run_on_module(module_name)
-
+        print_results(results)
 
     except Exception as e:
         logging.info(e)
-        logging.exception("Exception occurred. Cleaning up...")
-        # TODO: Remove containers and network
+        logging.exception("Exception occurred.")
 
-        delete_containers_and_network()
+    logging.info("Cleaning up...")
+    delete_containers_and_network()
 
 
 if __name__ == '__main__':
