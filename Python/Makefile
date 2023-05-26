@@ -1,4 +1,4 @@
-MODULENAME=apt
+MODULENAME=lineinfile
 NUM_TESTS=3
 
 all: run
