@@ -94,6 +94,7 @@ class AnsibleModuleSpecification:
                                                default=option.get("default"), choices=option.get("choices"),
                                                element_type=option.get("element_type"), deprecated=option["deprecated"],
                                                deprecated_reason=option.get("deprecated_reason"), )
+
             options.append(parameter)
         return cls(module_name, description, options)
 

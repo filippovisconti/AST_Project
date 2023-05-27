@@ -70,29 +70,25 @@ def extract_attribute_data(table_html):
         data['type'] = 'gid'
 
     if data['type'] == 'list':
-        if data['name'] == 'name':
-            data['element_type'] = 'name'
-        else:
-            data['element_type'] = 'str'
+        data['element_type'] = 'name' if data['name'] == 'name' else 'str'
 
     try:
-        if table_html.select_one('.ansible-option-required').text is not None:
-            data['required'] = True
-        else:
-            data['required'] = False
+        required_text = table_html.select_one('.ansible-option-required').text
+        data['required'] = required_text is not None
+
     except AttributeError:
         data['required'] = False
 
     div_class = table_html.find_all('div')
     try:
         data['description'] = div_class[-1].text.replace('\n', ' ').replace('\\', ' ')
-    except:
+    except IndexError:
         data['description'] = None
 
     try:
         data['choices'] = [li.text.strip().split(' ')[0] for li in
                            table_html.select('.ansible-option-cell ul.simple li')]
-    except:
+    except AttributeError:
         data['choices'] = []
 
     try:
@@ -100,7 +96,7 @@ def extract_attribute_data(table_html):
         data['default'] = tmp.split(' ')[0]
         if data['default'] == 'Default:':
             raise AttributeError
-    except:
+    except AttributeError:
         data['default'] = None
 
     try:
@@ -128,10 +124,11 @@ def extract_attribute_data(table_html):
                 '''
             if values:
                 logging.info(f"Mutually exclusive with values: {values}")
+
             data['mutually_exclusive_with'] = values
         else:
             data['mutually_exclusive_with'] = []
-    except:
+    except AttributeError:
         data['mutually_exclusive_with'] = []
 
     data['deprecated'] = False

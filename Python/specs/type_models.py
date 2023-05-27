@@ -2,6 +2,7 @@ import grp
 import os
 import pwd
 import random
+import string
 from pathlib import Path
 from typing import List
 
@@ -12,7 +13,11 @@ class StringGenerator:
         if choices:
             return random.choice(choices)
         else:
-            return f"str_{random.randint(0, 100)}"
+            length = random.randint(3, 15)
+            letters = string.ascii_lowercase
+            word = ''.join(random.choice(letters) for _ in range(length))
+            return word
+
 
 class NameGenerator:
     @staticmethod
@@ -23,28 +28,25 @@ class NameGenerator:
             list_of_names = ['htop', 'git', 'net-tools', 'sudo', 'nvim', 'nano', 'lsof']
             return random.choice(list_of_names)
 
+
 class UserGenerator:
     @staticmethod
     def generate_random_value() -> str:
-        user_list = pwd.getpwall()
+        all_users = pwd.getpwall()
 
-        if user_list:
-            random_user = random.choice(user_list)
-            return random_user.pw_name
-        else:
-            return 'root'
+        non_root_users = [user.pw_name for user in all_users if user.pw_uid >= 1000 and user.pw_name != 'root']
+
+        return random.choice(non_root_users)
 
 
 class GroupGenerator:
     @staticmethod
     def generate_random_value() -> str:
-        group_list = grp.getgrall()
+        groups = grp.getgrall()
 
-        if group_list:
-            random_group = random.choice(group_list)
-            return random_group.gr_name
-        else:
-            return 'root'
+        non_root_groups = [group.gr_name for group in groups if group.gr_gid > 0]
+
+        return random.choice(non_root_groups)
 
 
 class GidGenerator:
@@ -75,10 +77,15 @@ class PathGenerator:
                 path = Path(choice)
                 owner = path.owner()
 
-                while owner == 'root':
+                exclude = 'usr'
+                while (not os.access(path, os.R_OK)) and exclude in path:
+
                     choice = random.choice(file_list)
                     path = Path(choice)
-                    owner = path.owner()
+                    try:
+                        owner = path.owner()
+                    except:
+                        continue
 
                 return choice
 
