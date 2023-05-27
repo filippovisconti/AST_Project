@@ -18,12 +18,10 @@ def main():
     args = parser.parse_args()
 
     logging.info(f'Generating random tasks for {args.specs_file}')
-
     module_spec: AnsibleModuleSpecification = AnsibleModuleSpecification.from_json(args.specs_file)
 
     logging.info(f'Creating default task for {args.module_name}')
     default_task = create_task_from_spec_default(module_spec)
-
     create_playbook(task=default_task, module_name=args.module_name, hosts=args.hosts, playbook_suffix='default')
 
     logging.info(f'Creating random combinations for {args.module_name}')
