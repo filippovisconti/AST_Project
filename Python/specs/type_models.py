@@ -90,7 +90,7 @@ class PathGenerator:
         else:
             exclude = ['/usr', '/sys', '/proc', '/ssl', '/devices',
                        '/dpkg', '/lib', '/lib64', '/bin', '/sbin', '/boot',
-                       'uid', 'gid', 'shadow', 'pass']
+                       'uid', 'gid', 'shadow', 'pass', 'pam','user']
             file_list = []
             for root, dirs, files in os.walk('/'):
                 for file in files:

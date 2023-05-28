@@ -79,11 +79,13 @@ def run_on_module(module_name: str, cnc_machine: docker.models.containers.Contai
 def print_results(results: dict):
     for key, value in results.items():
         if key == 0:
-            print(f"PASS, Count: {value}")
+            print(f"PASS           - Count: {value}")
         elif key == -1:
-            print(f"MODULE FAILURE:, Count: {value}")
+            print(f"MODULE FAILURE - Count: {value}")
+        elif key == -2:
+            print(f"SET ATTR ERROR - Count: {value}")
         else:
-            print(f"Return value: {key}, Count: {value}")
+            print(f"EXIT CODE: {key},   Count: {value}")
 
 
 def main():

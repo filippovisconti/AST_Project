@@ -2,6 +2,7 @@ import logging
 import os
 import platform
 import sys
+from pprint import pprint
 
 import docker
 
@@ -221,9 +222,12 @@ def run_ansible_playbook(playbook_path: str, cnc: docker.models.containers.Conta
         if 'MODULE FAILURE' in output:
             logging.error(f"MODULE FAILURE DETECTED.")
             ret_code = -1
-        return ret_code
+        if 'Error while setting attributes' in output:
+            pprint(output.split('chattr failed')[1].split('path')[1].split(',')[0].strip())
+            ret_code = -2
     else:
         logging.debug(f"PLAYBOOK RUN OK.")
+    return ret_code
 
 
 def setup_infrastructure():
