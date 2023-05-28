@@ -3,7 +3,6 @@ import os
 import pwd
 import random
 import string
-from pathlib import Path
 from typing import List
 
 
@@ -33,10 +32,15 @@ class UserGenerator:
     @staticmethod
     def generate_random_value() -> str:
         all_users = pwd.getpwall()
+        all_users = [user.pw_name for user in all_users]
+        print(all_users)
+        choice = random.choice(all_users)
+        exclude = ['nobody', 'nogroup', 'root', 'system']
 
-        non_root_users = [user.pw_name for user in all_users if user.pw_uid >= 1000 and user.pw_name != 'root']
+        while choice in exclude and len(choice) > 10:
+            choice = random.choice(all_users)
 
-        return random.choice(non_root_users)
+        return choice
 
 
 class GroupGenerator:
@@ -46,7 +50,13 @@ class GroupGenerator:
 
         non_root_groups = [group.gr_name for group in groups if group.gr_gid > 0]
 
-        return random.choice(non_root_groups)
+        choice = random.choice(non_root_groups)
+        exclude = ['nobody', 'nogroup']
+
+        while choice in exclude:
+            choice = random.choice(non_root_groups)
+
+        return choice
 
 
 class GidGenerator:
@@ -63,31 +73,38 @@ class GidGenerator:
 
 class PathGenerator:
     @staticmethod
+    def starts_with(path: str, exclude: str) -> bool:
+        return exclude in path
+
+    @staticmethod
+    def starts_with_any_of(path: str, excludes: List[str]) -> bool:
+        for exclude in excludes:
+            if PathGenerator.starts_with(path, exclude):
+                return True
+        return False
+
+    @staticmethod
     def generate_random_value(choices: List = None) -> str:
         if choices:
             return random.choice(choices)
         else:
+            exclude = ['/usr', '/sys', '/proc', '/ssl', '/devices']
             file_list = []
             for root, dirs, files in os.walk('/'):
                 for file in files:
-                    file_list.append(os.path.join(root, file))
+                    if not PathGenerator.starts_with_any_of(path=root, excludes=exclude):
+                        file_list.append(os.path.join(root, file))
 
-            if file_list:
+            if not file_list:
+                raise ValueError(f"Could not generate a random path, file_list is empty.")
+
+            choice = random.choice(file_list)
+
+            while not os.access(choice, os.R_OK):
                 choice = random.choice(file_list)
-                path = Path(choice)
-                owner = path.owner()
 
-                exclude = 'usr'
-                while (not os.access(path, os.R_OK)) and exclude in path:
-
-                    choice = random.choice(file_list)
-                    path = Path(choice)
-                    try:
-                        owner = path.owner()
-                    except:
-                        continue
-
-                return choice
+            # print(f"Generated path: {choice}", PathGenerator.starts_with_any_of(choice, exclude))
+            return choice
 
 
 class ModeGenerator:
@@ -141,3 +158,7 @@ class ListGenerator:
             return random.sample(list_of_names, 2)
         else:
             raise ValueError(f"Unsupported element_type: {element_type}")
+
+
+if __name__ == "__main__":
+    print(UserGenerator.generate_random_value())
