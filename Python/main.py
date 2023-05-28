@@ -78,7 +78,12 @@ def run_on_module(module_name: str, cnc_machine: docker.models.containers.Contai
 
 def print_results(results: dict):
     for key, value in results.items():
-        print(f"Return value: {key}, Count: {value}")
+        if key == 0:
+            print(f"PASS, Count: {value}")
+        elif key == -1:
+            print(f"MODULE FAILURE:, Count: {value}")
+        else:
+            print(f"Return value: {key}, Count: {value}")
 
 
 def main():
@@ -88,7 +93,7 @@ def main():
     parser = argparse.ArgumentParser(description='Fuzzer for Ansible modules')
     parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module', default='lineinfile')
     parser.add_argument('-n', '--num_tests', type=int, help='Number of fuzzed playbooks to generate', default='15')
-    parser.add_argument('-s', '--create_spec', type=bool, help='If set, creates specification file', default='15')
+    parser.add_argument('-s', '--create_spec', action="store_true", help='If set, creates specification file')
     args = parser.parse_args()
     logging.info(f"Running fuzzer with parameters {args}")
     try:
