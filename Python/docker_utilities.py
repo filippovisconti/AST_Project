@@ -190,23 +190,24 @@ def delete_containers_and_network(signal=None, frame=None):
     sys.exit(0)
 
 
-def exec_run_wrapper(cnc: docker.models.containers.Container, command: str):
+def exec_run_wrapper(cnc: docker.models.containers.Container, command: str) -> tuple[int, str]:
     res = cnc.exec_run(command)
+    output: str = res.output.decode('utf-8')
     if res.exit_code == 0:
         logging.info(f"Executed command\n\t\t\t{command}\n\t\t\tsuccessfully")
-        logging.debug(res.output.decode('utf-8'))
+        logging.debug(output)
     else:
         logging.error(f"Command {command} failed - code {res.exit_code}")
-        logging.error(res.output.decode('utf-8'))
+        logging.error(output)
 
-    return res.exit_code
+    return res.exit_code, output
 
 
 def run_ansible_playbook(playbook_path: str, cnc: docker.models.containers.Container) -> int:
     logging.info("Running Ansible playbook...")
 
     syntax_check = f'ansible-playbook --syntax-check  -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
-    ret_code = exec_run_wrapper(cnc, syntax_check)
+    ret_code, _ = exec_run_wrapper(cnc, syntax_check)
     if ret_code != 0:
         logging.error(f"FAILED SYNTAX CHECK. ABORTING...")
         return ret_code
@@ -214,7 +215,15 @@ def run_ansible_playbook(playbook_path: str, cnc: docker.models.containers.Conta
         logging.debug(f"SYNTAX CHECK OK. RUNNING PLAYBOOK...")
 
     actual_run = f'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
-    return exec_run_wrapper(cnc, actual_run)
+    ret_code, output = exec_run_wrapper(cnc, actual_run)
+    if ret_code != 0:
+        logging.error(f"FAILED PLAYBOOK RUN. ABORTING...")
+        if 'MODULE FAILURE' in output:
+            logging.error(f"MODULE FAILURE DETECTED.")
+            ret_code = -1
+        return ret_code
+    else:
+        logging.debug(f"PLAYBOOK RUN OK.")
 
 
 def setup_infrastructure():
