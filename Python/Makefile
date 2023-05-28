@@ -1,5 +1,5 @@
 MODULENAME=lineinfile
-NUM_TESTS=3
+NUM_TESTS=10
 
 all: run
 

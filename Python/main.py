@@ -21,10 +21,17 @@ def generate_playbooks(module_name: str, containers: list[docker.models.containe
 
 
 def try_lock():
-    while not os.path.exists(signal_file):
+    tries = 5
+    while not os.path.exists(signal_file) and tries > 0:
         logging.info("Waiting for signal file")
         sleep(1)
-    logging.info(f"Signal file found({os.path.exists(signal_file)}). Running playbook...")
+        tries -= 1
+
+    if tries <= 0:
+        logging.info("Signal file not found. Aborting...")
+        exit(1)
+
+    logging.info(f"Signal file found ({os.path.exists(signal_file)}). Running playbook...")
 
 
 def free_lock():
@@ -35,9 +42,14 @@ def free_lock():
 
 
 def run_on_module(module_name: str, cnc_machine: docker.models.containers.Container = None,
-                  containers: list[docker.models.containers.Container] = None, num_tests: int = 15):
-    logging.info(f'Generating json specification for {module_name}')
-    generate_json(builtin_module_name=module_name, dest_dir='specs')
+                  containers: list[docker.models.containers.Container] = None, num_tests: int = 15,
+                  create_spec: bool = False):
+
+    if create_spec or not os.path.exists(f'specs/{module_name}_specification.json'):
+        logging.info(f'Generating json specification for {module_name}')
+        generate_json(builtin_module_name=module_name, dest_dir='specs')
+    else:
+        logging.info(f'Using existing json specification for {module_name}')
 
     generate_playbooks(module_name=module_name, containers=containers, num_tests=num_tests)
 
@@ -76,6 +88,7 @@ def main():
     parser = argparse.ArgumentParser(description='Fuzzer for Ansible modules')
     parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module', default='lineinfile')
     parser.add_argument('-n', '--num_tests', type=int, help='Number of fuzzed playbooks to generate', default='15')
+    parser.add_argument('-s', '--create_spec', type=bool, help='If set, creates specification file', default='15')
     args = parser.parse_args()
     logging.info(f"Running fuzzer with parameters {args}")
     try:
@@ -83,7 +96,7 @@ def main():
         module_name = args.module_name
 
         results = run_on_module(module_name=module_name, cnc_machine=cnc_machine, containers=containers,
-                                num_tests=args.num_tests)
+                                num_tests=args.num_tests, create_spec=args.create_spec)
 
         print_results(results)
 

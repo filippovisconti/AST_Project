@@ -79,6 +79,9 @@ def extract_attribute_data(table_html):
     except AttributeError:
         data['required'] = False
 
+    if data['name'] == 'line':
+        data['required'] = True
+
     div_class = table_html.find_all('div')
     try:
         data['description'] = div_class[-1].text.replace('\n', ' ').replace('\\', ' ')
@@ -123,7 +126,7 @@ def extract_attribute_data(table_html):
                     values.append(value)
                 '''
             if values:
-                logging.info(f"Mutually exclusive with values: {values}")
+                logging.debug(f"{data['name']} is mutually exclusive with values: {values}")
 
             data['mutually_exclusive_with'] = values
         else:

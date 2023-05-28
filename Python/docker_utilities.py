@@ -7,7 +7,7 @@ import docker
 
 logging.basicConfig(level=logging.INFO)
 
-logging.info("Create Docker client")
+logging.debug("Create Docker client")
 client = docker.from_env()
 logging.info("Created Docker client")
 
@@ -42,17 +42,17 @@ def create_network():
         client.networks.create(network_name, driver='bridge', ipam=ipam_config)
         logging.info("Created network")
     else:
-        logging.info("Network already exists")
+        logging.warning("Network already exists")
 
 
 def build_ansible_image():
     # Build image
     if not client.images.list(name=image_name_cnc):
-        logging.info(f"Pulling {image_name_cnc} image...")
+        logging.debug(f"Pulling {image_name_cnc} image...")
         client.images.pull(image_name_cnc, platform=platform)
-        logging.info(f"Pulled {image_name_cnc}image")
+        logging.debug(f"Pulled {image_name_cnc}image")
     else:
-        logging.info(f"{image_name_cnc} image already exists")
+        logging.debug(f"{image_name_cnc} image already exists")
 
     client.images.build(path='.',
                         dockerfile='Dockerfile-ansible-runner',
@@ -63,11 +63,11 @@ def build_ansible_image():
 def build_debian_image():
     # Build image
     if not client.images.list(name=image_name):
-        logging.info(f"Pulling {image_name} image...")
+        logging.debug(f"Pulling {image_name} image...")
         client.images.pull(image_name, platform=platform)
-        logging.info(f"Pulled {image_name} image")
+        logging.debug(f"Pulled {image_name} image")
     else:
-        logging.info(f"{image_name} image already exists")
+        logging.debug(f"{image_name} image already exists")
     client.images.build(path='.',
                         dockerfile='Dockerfile-debian',
                         tag='my-debian')
@@ -100,7 +100,7 @@ def create_cnc_machine() -> docker.models.containers.Container:
                                          detach=True,
                                          dns=['8.8.8.8', '8.8.4.4'])
 
-    logging.info(f'Created container {container_name}')
+    logging.debug(f'Created container {container_name}')
 
     container.start()
     container.reload()
@@ -147,7 +147,7 @@ def create_containers() -> list[docker.models.containers.Container]:
             detach=True,
             dns=['8.8.8.8', '8.8.4.4'])
 
-        logging.info(f'Created container {container_name}')
+        logging.debug(f'Created container {container_name}')
 
         container.start()
         container.reload()
@@ -159,7 +159,7 @@ def create_containers() -> list[docker.models.containers.Container]:
         command = 'service ssh start'
         container.exec_run(command)
 
-        logging.info(f'Executed commands on container {container_name}')
+        logging.debug(f'Executed commands on container {container_name}')
         containers.append(container)
 
     return containers
@@ -193,8 +193,8 @@ def delete_containers_and_network(signal=None, frame=None):
 def exec_run_wrapper(cnc: docker.models.containers.Container, command: str):
     res = cnc.exec_run(command)
     if res.exit_code == 0:
-        logging.info(f"Executed command {command} successfully")
-        logging.info(res.output.decode('utf-8'))
+        logging.info(f"Executed command\n\t\t\t{command}\n\t\t\tsuccessfully")
+        logging.debug(res.output.decode('utf-8'))
     else:
         logging.error(f"Command {command} failed - code {res.exit_code}")
         logging.error(res.output.decode('utf-8'))
@@ -211,7 +211,7 @@ def run_ansible_playbook(playbook_path: str, cnc: docker.models.containers.Conta
         logging.error(f"FAILED SYNTAX CHECK. ABORTING...")
         return ret_code
     else:
-        logging.info(f"SYNTAX CHECK OK. RUNNING PLAYBOOK...")
+        logging.debug(f"SYNTAX CHECK OK. RUNNING PLAYBOOK...")
 
     actual_run = f'ansible-playbook -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
     return exec_run_wrapper(cnc, actual_run)
