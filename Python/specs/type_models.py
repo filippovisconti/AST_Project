@@ -18,6 +18,20 @@ class StringGenerator:
             return word
 
 
+class RegExpGenerator:
+    @classmethod
+    def generate_random_value(cls):
+        pattern: str = ""
+        pattern_length = random.randint(5, 10)  # Adjust the pattern length as needed
+
+        for _ in range(pattern_length):
+            # Choose a random character from a set of valid characters for the regular expression
+            char = random.choice(string.ascii_lowercase + string.digits)
+            pattern += char
+
+        return '.*' + pattern + '.*'
+
+
 class NameGenerator:
     @staticmethod
     def generate_random_value(choices: List = None) -> str:
@@ -88,9 +102,9 @@ class PathGenerator:
         if choices:
             return random.choice(choices)
         else:
-            exclude = ['/usr', '/sys', '/proc', '/ssl', '/devices',
+            exclude = ['/usr', '/sys', '/etc', '/run', '/proc', '/ssl', '/devices',
                        '/dpkg', '/lib', '/lib64', '/bin', '/sbin', '/boot',
-                       'uid', 'gid', 'shadow', 'pass', 'pam','user']
+                       'uid', 'gid', 'shadow', 'pass', 'pam', 'user', '/tmp']
             file_list = []
             for root, dirs, files in os.walk('/'):
                 for file in files:

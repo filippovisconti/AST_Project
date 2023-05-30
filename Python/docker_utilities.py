@@ -222,9 +222,16 @@ def run_ansible_playbook(playbook_path: str, cnc: docker.models.containers.Conta
         if 'MODULE FAILURE' in output:
             logging.error(f"MODULE FAILURE DETECTED.")
             ret_code = -1
-        if 'Error while setting attributes' in output:
+        elif 'Error while setting attributes' in output:
             pprint(output.split('chattr failed')[1].split('path')[1].split(',')[0].strip())
             ret_code = -2
+
+        verbose_run = f'ansible-playbook -vvv -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
+        _, output = exec_run_wrapper(cnc, verbose_run)
+        logging.error("!!! VERBOSE OUTPUT !!!")
+        logging.error(output)
+        logging.error("!!! END !!!")
+
     else:
         logging.debug(f"PLAYBOOK RUN OK.")
     return ret_code

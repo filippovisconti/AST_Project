@@ -69,6 +69,9 @@ def extract_attribute_data(table_html):
     elif data['name'] == 'gid':
         data['type'] = 'gid'
 
+    elif data['name'] == 'regexp':
+        data['type'] = 'regexp'
+
     if data['type'] == 'list':
         data['element_type'] = 'name' if data['name'] == 'name' else 'str'
 

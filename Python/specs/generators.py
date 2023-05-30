@@ -1,11 +1,16 @@
 from type_models import *
 
 
+
+
 def generate_random_parameter_value(parameter_type: str, choices: List = None, element_type: str = None):
     """Generates a random value of the specified parameter_type."""
     try:
         if parameter_type == "str" or parameter_type == "string":
             return StringGenerator.generate_random_value(choices=choices)
+
+        elif parameter_type == 'regexp':
+            return RegExpGenerator.generate_random_value()
 
         elif parameter_type == 'user':
             return UserGenerator.generate_random_value()

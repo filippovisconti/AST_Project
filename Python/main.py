@@ -43,8 +43,7 @@ def free_lock():
 
 def run_on_module(module_name: str, cnc_machine: docker.models.containers.Container = None,
                   containers: list[docker.models.containers.Container] = None, num_tests: int = 15,
-                  create_spec: bool = False):
-
+                  create_spec: bool = False, integration_file=None):
     if create_spec or not os.path.exists(f'specs/{module_name}_specification.json'):
         logging.info(f'Generating json specification for {module_name}')
         generate_json(builtin_module_name=module_name, dest_dir='specs')
@@ -59,6 +58,11 @@ def run_on_module(module_name: str, cnc_machine: docker.models.containers.Contai
     for playbook_name in os.listdir('ansible/fuzzed_playbooks'):
         playbook_path = f'fuzzed_playbooks/{playbook_name}'
         logging.info(f'Running playbook {playbook_path}')
+
+        # run setup playbook
+        if integration_file:
+            # run setup playbook
+            pass
 
         exit_code = run_ansible_playbook(playbook_path=playbook_path, cnc=cnc_machine)
 
@@ -96,14 +100,18 @@ def main():
     parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module', default='lineinfile')
     parser.add_argument('-n', '--num_tests', type=int, help='Number of fuzzed playbooks to generate', default='15')
     parser.add_argument('-s', '--create_spec', action="store_true", help='If set, creates specification file')
+    parser.add_argument('-i', '--integration_file', type=str, help='If set, uses the given integration file',
+                        default=None)
     args = parser.parse_args()
+
     logging.info(f"Running fuzzer with parameters {args}")
     try:
         containers, cnc_machine = setup_infrastructure()
         module_name = args.module_name
 
         results = run_on_module(module_name=module_name, cnc_machine=cnc_machine, containers=containers,
-                                num_tests=args.num_tests, create_spec=args.create_spec)
+                                num_tests=args.num_tests, create_spec=args.create_spec,
+                                integration_file=args.integration_file)
 
         print_results(results)
 

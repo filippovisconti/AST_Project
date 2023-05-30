@@ -12,5 +12,7 @@ fuzz:
 
 clean:
 	rm -f ansible/fuzzed_playbooks/*.yaml
+
+deep_clean:
 	rm -f specs/*.log
 	rm -f specs/*.json
