@@ -95,7 +95,7 @@ def create_cnc_machine() -> docker.models.containers.Container:
                                              },
                                              f'{cwd}/ansible/ansible.cfg': {
                                                  'bind': '/root/.ansible.cfg',
-                                                 'mode': 'rw'
+                                                 'mode': 'ro'
                                              }
                                          },
                                          detach=True,
@@ -128,10 +128,6 @@ def create_containers() -> list[docker.models.containers.Container]:
             platform=platform,
             command=start_command,
             volumes={
-                f'{cwd}/ansible/keys': {
-                    'bind': '/root/.ssh/',
-                    'mode': 'rw'
-                },
                 f'{cwd}/ansible/fuzzed_playbooks': {
                     'bind': '/root/fuzzed_playbooks',
                     'mode': 'rw'
@@ -174,7 +170,7 @@ def reset_containers(containers: list[docker.models.containers.Container]) -> li
     return create_containers()
 
 
-def delete_containers_and_network(signal=None, frame=None):
+def delete_containers_and_network():
     # Remove containers
     for container in client.containers.list():
         container.remove(force=True)
@@ -184,6 +180,7 @@ def delete_containers_and_network(signal=None, frame=None):
     # Remove network
     client.networks.get(network_name).remove()
     logging.info("Removed network")
+
     try:
         os.remove('specs/inverse_lock')
     except FileNotFoundError:
@@ -225,6 +222,8 @@ def run_ansible_playbook(playbook_path: str, cnc: docker.models.containers.Conta
         elif 'Error while setting attributes' in output:
             pprint(output.split('chattr failed')[1].split('path')[1].split(',')[0].strip())
             ret_code = -2
+        elif "mutually exclusive" in output:
+            ret_code = -3
 
         verbose_run = f'ansible-playbook -vvv -i /root/ansible/inventory.ini /root/ansible/{playbook_path}'
         _, output = exec_run_wrapper(cnc, verbose_run)

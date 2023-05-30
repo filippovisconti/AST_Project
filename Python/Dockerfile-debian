@@ -3,4 +3,7 @@ FROM debian:latest
 RUN mkdir -p /root/specs
 RUN apt update
 RUN apt install net-tools openssh-server python3 sudo -y
-RUN ["/bin/bash", "-c", "touch /tmp/file_{0..99}"]
+
+COPY ansible/keys/authorized_keys /root/.ssh/authorized_keys
+
+RUN chown -R root:root /root/.ssh/  && chmod 600 /root/.ssh/authorized_keys
