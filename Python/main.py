@@ -43,7 +43,7 @@ def free_lock():
 
 def run_on_module(module_name: str, cnc_machine: docker.models.containers.Container = None,
                   containers: list[docker.models.containers.Container] = None, num_tests: int = 15,
-                  create_spec: bool = False, integration_file=None) -> None:
+                  create_spec: bool = False, integration_file=None):
     if create_spec or not os.path.exists(f'specs/{module_name}_specification.json'):
         logging.info(f'Generating json specification for {module_name}')
         generate_json(builtin_module_name=module_name, dest_dir='specs')
@@ -54,15 +54,17 @@ def run_on_module(module_name: str, cnc_machine: docker.models.containers.Contai
 
     try_lock()
 
-    global results
+    results = {}
     for playbook_name in os.listdir('ansible/fuzzed_playbooks'):
         playbook_path = f'fuzzed_playbooks/{playbook_name}'
         logging.info(f'Running playbook {playbook_path}')
 
         # run setup playbook
-        # if integration_file:
-        # run setup playbook
-        #    pass
+        if integration_file:
+            # run setup playbook
+            setup_playbook_path = 'ansible/setup.yaml'  # Specify the path to your setup.yaml file
+            run_ansible_playbook(playbook_path=setup_playbook_path)
+            pass
 
         exit_code = run_ansible_playbook(playbook_path=playbook_path, cnc=cnc_machine)
 
@@ -77,62 +79,42 @@ def run_on_module(module_name: str, cnc_machine: docker.models.containers.Contai
 
     free_lock()
 
+    return results
 
-def print_results(res: dict = None):
-    if not res:
-        res = results
 
-    print("Results:")
-    for key, value in res.items():
+def print_results(results: dict):
+    for key, value in results.items():
         if key == 0:
             print(f"PASS           - Count: {value}")
         elif key == -1:
             print(f"MODULE FAILURE - Count: {value}")
         elif key == -2:
             print(f"SET ATTR ERROR - Count: {value}")
-        elif key == -3:
-            print(f"MUT EXCL PARAM - Count: {value}")
         else:
             print(f"EXIT CODE: {key},   Count: {value}")
 
 
-results: dict = {}
-
-
-def kill_wrapper(signal=None, frame=None):
-    print_results()
-    try:
-        delete_containers_and_network()
-    except Exception as e:
-        logging.exception(e)
-
-
 def main():
     # Call create_containers function
-    signal.signal(signal.SIGINT, kill_wrapper)
+    signal.signal(signal.SIGINT, delete_containers_and_network)
 
     parser = argparse.ArgumentParser(description='Fuzzer for Ansible modules')
-    parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module', default='lineinfile',
-                        required=True)
-    parser.add_argument('-n', '--num_tests', type=int, help='Number of fuzzed playbooks to generate', default='15',
-                        required=True)
-    parser.add_argument('-s', '--create_spec', action="store_true", help='If set, creates specification file',
-                        required=False)
+    parser.add_argument('-m', '--module_name', type=str, help='Name of the Ansible module', default='lineinfile')
+    parser.add_argument('-n', '--num_tests', type=int, help='Number of fuzzed playbooks to generate', default='15')
+    parser.add_argument('-s', '--create_spec', action="store_true", help='If set, creates specification file')
     parser.add_argument('-i', '--integration_file', type=str, help='If set, uses the given integration file',
-                        default=None, required=False)
+                        default=None)
     args = parser.parse_args()
 
     logging.info(f"Running fuzzer with parameters {args}")
-
     try:
         containers, cnc_machine = setup_infrastructure()
         module_name = args.module_name
 
-        run_on_module(module_name=module_name, cnc_machine=cnc_machine, containers=containers,
-                      num_tests=args.num_tests, create_spec=args.create_spec,
-                      integration_file=args.integration_file)
+        results = run_on_module(module_name=module_name, cnc_machine=cnc_machine, containers=containers,
+                                num_tests=args.num_tests, create_spec=args.create_spec,
+                                integration_file=args.integration_file)
 
-        global results
         print_results(results)
 
     except Exception as e:
