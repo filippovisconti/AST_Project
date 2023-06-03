@@ -6,32 +6,20 @@ from pprint import pprint
 
 import docker
 
-logging.basicConfig(level=logging.INFO)
+client: docker.client.DockerClient = docker.from_env()
 
-logging.debug("Create Docker client")
-client = docker.from_env()
-logging.info("Created Docker client")
-
-# Define network settings
-subnet = '10.10.10.0/24'
-gateway_ip = '10.10.10.1'
 network_name = 'ansible_network'
 
-# Define container settings
-image_name = 'debian'
-image_name_cnc = 'alpine'
-container_count = 3
 if platform.machine() == 'arm64':
-    platform = 'linux/arm64'
+    image_platform = 'linux/arm64'
 else:
-    platform = 'linux/amd64'
-
-start_command = 'tail -f /dev/null'
-cwd = os.getcwd()
+    image_platform = 'linux/amd64'
 
 
 def create_network():
     # Create network
+    subnet = '10.10.10.0/24'
+    gateway_ip = '10.10.10.1'
     networks = client.networks.list(names=[network_name])
     if not networks:
 
@@ -48,9 +36,10 @@ def create_network():
 
 def build_ansible_image():
     # Build image
+    image_name_cnc = 'alpine'
     if not client.images.list(name=image_name_cnc):
         logging.debug(f"Pulling {image_name_cnc} image...")
-        client.images.pull(image_name_cnc, platform=platform)
+        client.images.pull(image_name_cnc, platform=image_platform)
         logging.debug(f"Pulled {image_name_cnc}image")
     else:
         logging.debug(f"{image_name_cnc} image already exists")
@@ -63,9 +52,10 @@ def build_ansible_image():
 
 def build_debian_image():
     # Build image
+    image_name = 'debian'
     if not client.images.list(name=image_name):
         logging.debug(f"Pulling {image_name} image...")
-        client.images.pull(image_name, platform=platform)
+        client.images.pull(image_name, platform=image_platform)
         logging.debug(f"Pulled {image_name} image")
     else:
         logging.debug(f"{image_name} image already exists")
@@ -77,12 +67,13 @@ def build_debian_image():
 
 def create_cnc_machine() -> docker.models.containers.Container:
     # Create containers
-
+    cwd = os.getcwd()
     container_name = f'cnc_machine'
+    start_command = 'tail -f /dev/null'
     container = client.containers.create(image='my-ansible-runner',
                                          name=container_name,
                                          network=network_name,
-                                         platform=platform,
+                                         platform=image_platform,
                                          command=start_command,
                                          volumes={
                                              f'{cwd}/ansible': {
@@ -118,6 +109,9 @@ def create_cnc_machine() -> docker.models.containers.Container:
 
 def create_containers() -> list[docker.models.containers.Container]:
     # Create containers
+    cwd = os.getcwd()
+    container_count = 3
+    start_command = 'tail -f /dev/null'
     containers = []
     for i in range(container_count):
         container_name = f'container_{i + 2}'
@@ -125,7 +119,7 @@ def create_containers() -> list[docker.models.containers.Container]:
             image=f'my-debian',
             name=container_name,
             network=network_name,
-            platform=platform,
+            platform=image_platform,
             command=start_command,
             volumes={
                 f'{cwd}/ansible/fuzzed_playbooks': {

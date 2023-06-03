@@ -14,3 +14,34 @@ Create generator for every file type (paths, boolean) and design mutation strate
 - Get setup code from integration tests of modules
 - Try to extract automatically
 - Clean up code after each task
+
+
+    # TODO: unique combinations of optional parameters (lets say first 100 combinations), pick randomly, use required + picked choice of random parameters -> exclude mutually exclusive parameters
+    # TODO: Get system state inside generators
+    # TODO: more modules
+    # TODO: run same playbook on different systems and system states
+    # (strace)
+
+lineinfile
+git https://docs.ansible.com/ansible/latest/collections/ansible/builtin/git_module.html
+apt https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html
+service https://docs.ansible.com/ansible/latest/modules/service_module.html
+copy https://docs.ansible.com/ansible/latest/modules/copy_module.html
+lxc_container https://docs.ansible.com/ansible/2.9/modules/lxc_container_module.html
+setup https://docs.ansible.com/ansible/2.9/modules/setup_module.html#setup-module
+shell https://docs.ansible.com/ansible/2.9/modules/shell_module.html#shell-module
+
+
+
+Get setup code from integration tests of modules
+
+later - Decouple generators
+
+fix specification
+-->check if file is accessible by non root users
+
+√ fix mut excl for lineinfile
+
+roll back to older version for PoC
+
+--> to Decrease failure rate

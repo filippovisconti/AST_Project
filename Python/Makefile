@@ -1,10 +1,13 @@
 MODULENAME=lineinfile
-NUM_TESTS=3
+NUM_TESTS=4
 
 all: run
 
 run: clean
 	python3 ./main.py -m $(MODULENAME) -n $(NUM_TESTS) -s
+
+debug: clean
+	python3 ./main.py -m $(MODULENAME) -n $(NUM_TESTS) -s -v
 
 fuzz:
 	rm -f ansible/fuzzed_playbooks/*.yaml

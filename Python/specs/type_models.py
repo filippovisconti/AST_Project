@@ -1,4 +1,5 @@
 import grp
+import logging
 import os
 import pwd
 import random
@@ -102,10 +103,11 @@ class PathGenerator:
         if choices:
             return random.choice(choices)
         else:
-            exclude = ['/usr', '/sys', '/etc', '/dev', '/run', '/var', '/root',
+            exclude = ['/sys', '/share', '/etc', '/dev', '/run', '/root',
                        '/proc', '/ssl', '/devices', '/tmp',
-                       '/dpkg', '/lib', '/lib64', '/bin', '/sbin', '/boot',
-                       'uid', 'gid', 'shadow', 'pass', 'pam', 'user', 'docker', 'key', 'conf']
+                       '/dpkg', '/lib', '/lib64', '/sbin', '/boot',
+                       'uid', 'gid', 'shadow', 'pass', 'pam', 'user', 'docker',
+                       '/.dockerenv', 'key', 'conf', 'login']
             file_list = []
             for root, dirs, files in os.walk('/'):
                 for file in files:
@@ -117,10 +119,10 @@ class PathGenerator:
 
             choice = random.choice(file_list)
 
-            while not os.access(choice, os.R_OK):
+            while not os.access(choice, os.R_OK) and file_list:
                 choice = random.choice(file_list)
+                file_list.remove(choice)
 
-            # print(f"Generated path: {choice}", PathGenerator.starts_with_any_of(choice, exclude))
             return choice
 
 

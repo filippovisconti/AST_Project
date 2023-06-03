@@ -1,0 +1,298 @@
+{
+  "description": "Note",
+  "module_name": "ansible.builtin.apt",
+  "options": [
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Allows changing the version of a package which is on the apt hold list Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "allow_change_held_packages",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Corresponds to the --allow-downgrades option for apt. This option enables the named package and version to replace an already installed higher version of that package. Note that setting allow_downgrade=true can make this module behave in a non-idempotent way. (The task could end up with a set of packages that does not match the complete list of specified packages to install). Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "allow_downgrade",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Ignore if packages cannot be authenticated. This is useful for bootstrapping environments that manage their own apt-key setup. allow_unauthenticated is only supported with state: install/present Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "allow_unauthenticated",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "If true, cleans the local repository of retrieved package files that can no longer be downloaded. Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "autoclean",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "If true, remove unused dependency packages for all module states except build-dep. It can also be used as the only option. Previous to version 2.4, autoclean was also an alias for autoremove, now it is its own separate command. See documentation for further information. Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "autoremove",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "Update the apt cache if it is older than the cache_valid_time. This option is set in seconds. As of Ansible 2.4, if explicitly set, this sets update_cache=yes. Default: 0 ",
+      "mutually_exclusive_with": [],
+      "name": "cache_valid_time",
+      "required": false,
+      "type": "integer"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Run the equivalent of apt-get clean to clear out the local repository of retrieved package files. It removes everything but the lock file from /var/cache/apt/archives/ and /var/cache/apt/archives/partial/. Can be run as part of the package installation (clean runs before install) or as a separate step. Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "clean",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "Path to a .deb package on the remote machine. If :// in the path, ansible will attempt to download deb before installing. (Version added 2.1) Requires the xz-utils package to extract the control file of the deb package to install. ",
+      "mutually_exclusive_with": [],
+      "name": "deb",
+      "required": false,
+      "type": "path"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "Corresponds to the -t option for apt and sets pin priorities ",
+      "mutually_exclusive_with": [],
+      "name": "default_release",
+      "required": false,
+      "type": "string"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "Add dpkg options to apt command. Defaults to \u2018-o \u201cDpkg::Options::=\u2013force-confdef\u201d -o \u201cDpkg::Options::=\u2013force-confold\u201d\u2019 Options should be supplied as comma separated list Default: \"force-confdef,force-confold\" ",
+      "mutually_exclusive_with": [],
+      "name": "dpkg_options",
+      "required": false,
+      "type": "string"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Corresponds to the --no-remove option for apt. If true, it is ensured that no packages will be removed or the task will fail. fail_on_autoremove is only supported with state except absent Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "fail_on_autoremove",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Corresponds to the --force-yes to apt-get and implies allow_unauthenticated: yes and allow_downgrade: yes This option will disable checking both the packages\u2019 signatures and the certificates of the web servers they are downloaded from. This option *is not* the equivalent of passing the -f flag to apt-get on the command line **This is a destructive operation with the potential to destroy your system, and it should almost never be used.** Please also see man apt-get for more information. Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "force",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Force usage of apt-get instead of aptitude Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "force_apt_get",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": null,
+      "deprecated": false,
+      "description": "Corresponds to the --no-install-recommends option for apt. true installs recommended packages.  false does not install recommended packages. By default, Ansible will use the same defaults as the operating system. Suggested packages are never installed. Choices:  false true  ",
+      "mutually_exclusive_with": [],
+      "name": "install_recommends",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "How many seconds will this action wait to acquire a lock on the apt db. Sometimes there is a transitory lock and this will retry at least until timeout is hit. Default: 60 ",
+      "mutually_exclusive_with": [],
+      "name": "lock_timeout",
+      "required": false,
+      "type": "integer"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "A list of package names, like foo, or package specifier with version, like foo=1.0 or foo>=1.0. Name wildcards (fnmatch) like apt* and version wildcards like foo=1.0* are also supported. ",
+      "element_type": "name",
+      "mutually_exclusive_with": [],
+      "name": "name",
+      "required": false,
+      "type": "list"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Only upgrade a package if it is already installed. Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "only_upgrade",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "Force the exit code of /usr/sbin/policy-rc.d. For example, if policy_rc_d=101 the installed package will not trigger a service start. If /usr/sbin/policy-rc.d already exists, it is backed up and restored after the package installation. If null, the /usr/sbin/policy-rc.d isn\u2019t created/changed. ",
+      "mutually_exclusive_with": [],
+      "name": "policy_rc_d",
+      "required": false,
+      "type": "integer"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "deprecated": false,
+      "description": "Will force purging of configuration files if the module state is set to absent. Choices:  false \u2190 (default) true  ",
+      "mutually_exclusive_with": [],
+      "name": "purge",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [
+        "\"absent\"",
+        "\"build-dep\"",
+        "\"latest\"",
+        "\"present\"",
+        "\"fixed\""
+      ],
+      "default": "\"present\"",
+      "deprecated": false,
+      "description": "Indicates the desired package state. latest ensures that the latest version is installed. build-dep ensures the package build dependencies are installed. fixed attempt to correct a system with broken dependencies in place. Choices:  \"absent\" \"build-dep\" \"latest\" \"present\" \u2190 (default) \"fixed\"  ",
+      "mutually_exclusive_with": [],
+      "name": "state",
+      "required": false,
+      "type": "string"
+    },
+    {
+      "choices": [
+        "false",
+        "true"
+      ],
+      "default": null,
+      "deprecated": false,
+      "description": "Run the equivalent of apt-get update before the operation. Can be run as part of the package installation or as a separate step. Default is not to update the cache. Choices:  false true  ",
+      "mutually_exclusive_with": [],
+      "name": "update_cache",
+      "required": false,
+      "type": "boolean"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "Amount of retries if the cache update fails. Also see update_cache_retry_max_delay. Default: 5 ",
+      "mutually_exclusive_with": [],
+      "name": "update_cache_retries",
+      "required": false,
+      "type": "integer"
+    },
+    {
+      "choices": [],
+      "default": null,
+      "deprecated": false,
+      "description": "Use an exponential backoff delay for each retry (see update_cache_retries) up to this max delay in seconds. Default: 12 ",
+      "mutually_exclusive_with": [],
+      "name": "update_cache_retry_max_delay",
+      "required": false,
+      "type": "integer"
+    },
+    {
+      "choices": [
+        "\"dist\"",
+        "\"full\"",
+        "\"no\"",
+        "\"safe\"",
+        "\"yes\""
+      ],
+      "default": "\"no\"",
+      "deprecated": false,
+      "description": "If yes or safe, performs an aptitude safe-upgrade. If full, performs an aptitude full-upgrade. If dist, performs an apt-get dist-upgrade. Note: This does not upgrade a specific package, use state=latest for that. Note: Since 2.4, apt-get is used as a fall-back if aptitude is not present. Choices:  \"dist\" \"full\" \"no\" \u2190 (default) \"safe\" \"yes\"  ",
+      "mutually_exclusive_with": [],
+      "name": "upgrade",
+      "required": false,
+      "type": "string"
+    }
+  ]
+}
